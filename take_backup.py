@@ -1,5 +1,6 @@
 import configparser
 import os
+from datetime import date
 
 # Import configuration file.
 config = configparser.ConfigParser()
@@ -20,4 +21,9 @@ if not os.path.exists(tmp_folder):
 
 # Create folder to save backups to
 if not os.path.exists(save_backups_to): 
-    os.makedirs(save_backups_to) 
+    os.makedirs(save_backups_to)
+
+# Create working folder for todays date.
+today = date.today()
+if not os.path.exists(tmp_folder + "/" + today): 
+    os.makedirs(tmp_folder + "/" + today) 
