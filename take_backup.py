@@ -24,6 +24,6 @@ if not os.path.exists(save_backups_to):
     os.makedirs(save_backups_to)
 
 # Create working folder for todays date.
-today = date.today()
+today = str(date.today())
 if not os.path.exists(tmp_folder + "/" + today): 
     os.makedirs(tmp_folder + "/" + today) 
