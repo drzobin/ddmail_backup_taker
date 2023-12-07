@@ -19,8 +19,10 @@ folders_to_backup = str.split(config["DEFAULT"]["folders_to_backup"])
 # Tar bin location.
 tar_bin = config["DEFAULT"]["tar_bin"]
 
-# Mysqldump bin location.
-mysqldump_bin = config["DEFAULT"]["mysqldump_bin"]
+# Mariadb-dump bin location.
+mariadbdump_bin = config["DEFAULT"]["mariadbdump_bin"]
+
+mariadb_root_password = config["mariadb"]["root_password"]
 
 # Create working folder.
 if not os.path.exists(tmp_folder): 
@@ -52,13 +54,11 @@ for folder in folders_to_backup:
 # Take backup of mariadb databases.
 if config["mariadb"].getboolean("take_backup") == True:
     try:
-        print(mysqldump_bin + " --all-databases" + " > " + tmp_folder_date + "/" + "full_db_dump.sql")
-        output = subprocess.run([mysqldump_bin,"--all-databases",">",tmp_folder_date + "/" + "full_db_dump.sql", shell=True, check=True)
+        f = open(tmp_folder_date + "/" + "full_db_dump.sql","w")
+        output = subprocess.run([mariadbdump_bin,"-h","localhost","--all-databases","-uroot","-p" + mariadb_root_password], check=True, stdout = f)
         if output.returncode != 0:
             print("error: returncode of cmd mysqldump is non zero")
     except subprocess.CalledProcessError as e:
         print("error: returncode of cmd mysqldump is non zero")
     except:
-        print("error: unkonwn exception running subprocess with mysqldump")
-
-
+        print("error: unknown exception running subprocess with mysqldump")
