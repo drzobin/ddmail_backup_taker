@@ -1,6 +1,7 @@
 import configparser
 import os
 import subprocess
+import shutil
 from datetime import date
 
 # Import configuration file.
@@ -16,12 +17,13 @@ save_backups_to = config["DEFAULT"]["save_backups_to"]
 # The folder to take backups on.
 folders_to_backup = str.split(config["DEFAULT"]["folders_to_backup"])
 
-# Tar bin location.
+# Tar binary location.
 tar_bin = config["DEFAULT"]["tar_bin"]
 
-# Mariadb-dump bin location.
+# Mariadb-dump binary location.
 mariadbdump_bin = config["DEFAULT"]["mariadbdump_bin"]
 
+# Mariadb root password.
 mariadb_root_password = config["mariadb"]["root_password"]
 
 # Create working folder.
@@ -62,3 +64,6 @@ if config["mariadb"].getboolean("take_backup") == True:
         print("error: returncode of cmd mysqldump is non zero")
     except:
         print("error: unknown exception running subprocess with mysqldump")
+
+# Compress all files with zip.
+shutil.make_archive(save_backups_to + "/" + "backup." + today, 'zip', tmp_folder_date)
