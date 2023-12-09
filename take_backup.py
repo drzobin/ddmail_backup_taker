@@ -30,7 +30,7 @@ mariadb_root_password = config["mariadb"]["root_password"]
 # Configure logging.
 logging.basicConfig(filename=config["logging"]["logfile"], format='%(asctime)s: %(levelname)s: %(message)s', level=logging.ERROR)
 
-# Create working folder.
+# Create tmp folder.
 if not os.path.exists(tmp_folder): 
     os.makedirs(tmp_folder) 
 
@@ -38,7 +38,7 @@ if not os.path.exists(tmp_folder):
 if not os.path.exists(save_backups_to): 
     os.makedirs(save_backups_to)
 
-# Create working folder for todays date.
+# Create tmp folder for todays date.
 today = str(datetime.date.today())
 if not os.path.exists(tmp_folder + "/" + today): 
     os.makedirs(tmp_folder + "/" + today)
