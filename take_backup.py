@@ -4,10 +4,18 @@ import subprocess
 import shutil
 import logging
 import datetime
+import sys
 
-# Import configuration file.
 config = configparser.ConfigParser()
-config.read('config.ini')
+conf_file = sys.argv[1]
+
+# Check that conf_file is a file.
+if os.path.isfile(conf_file) == False:
+    print("Error: can not open config file")
+    sys.exit(1)
+
+# Import configuration file from cmd arg.
+config.read(conf_file)
 
 # Working folder.
 tmp_folder = config["DEFAULT"]["tmp_folder"]
