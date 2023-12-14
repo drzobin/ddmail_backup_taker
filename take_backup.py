@@ -57,7 +57,7 @@ for folder in folders_to_backup:
     # Create tar archive name.
     backup_name = folder.replace("/","_") + ".tar.gz"
     try:
-        output = subprocess.run([tar_bin,"-czf",tmp_folder_date + "/" + backup_name,folder], check=True)
+        output = subprocess.run([tar_bin,"-czf",tmp_folder_date + "/" + backup_name,folder], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         if output.returncode != 0:
             logging.error("returncode of cmd tar is non zero")
     except subprocess.CalledProcessError as e:
