@@ -80,5 +80,8 @@ if config["mariadb"].getboolean("take_backup") == True:
 # Compress all files with zip.
 shutil.make_archive(save_backups_to + "/" + "backup." + today, 'zip', tmp_folder_date)
 
+# Change premissions on backupsfile.
+os.chmod(save_backups_to + "/" + "backup." + today + ".zip", 0o640)
+
 # Remove content in tmp folder.
 shutil.rmtree(tmp_folder_date)
