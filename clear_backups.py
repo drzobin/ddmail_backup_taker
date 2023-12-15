@@ -37,7 +37,7 @@ list_of_files = sorted(list_of_files, key = os.path.getmtime)
 
 # If we have less or equal of 7 backups then exit.
 if len(list_of_files) <= 7:
-    logging.info("We have less then ot equals to 7 backups saved, exit with doing anything")
+    logging.info("we have less then or equals to 7 backups saved, exit without doing anything")
     sys.exit(0)
 
 list_of_files.reverse()
@@ -50,4 +50,4 @@ for file in list_of_files:
         continue
     else:
         os.remove(save_backups_to + "/" + file)
-        logging.info("Removing: " + save_backups_to + "/" + file)
+        logging.info("removing: " + save_backups_to + "/" + file)
