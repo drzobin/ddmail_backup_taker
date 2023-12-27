@@ -49,5 +49,5 @@ for file in list_of_files:
     if count <= 7:
         continue
     else:
-        os.remove(save_backups_to + "/" + file)
+        os.remove(file)
         logging.info("removing: " + save_backups_to + "/" + file)
