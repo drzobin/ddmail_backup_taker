@@ -54,7 +54,7 @@ def backup_mariadb(mariadbdump_bin, mariadb_root_password, tmp_folder_date):
     except:
         logging.error("unknown exception running subprocess with mysqldump")
 
-
+# Clear/remove old backups.
 def clear_backups(save_backups_to, days_to_save_backups):
     # Check if save_backups_to is a folder.
     if not os.path.exists(save_backups_to): 
