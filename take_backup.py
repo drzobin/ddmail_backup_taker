@@ -6,6 +6,7 @@ import logging
 import datetime
 import sys
 import argparse
+import glob
 
 # Get arguments from args.
 parser = argparse.ArgumentParser(description="Backup for ddmail")
@@ -53,6 +54,35 @@ def backup_mariadb(mariadbdump_bin, mariadb_root_password, tmp_folder_date):
     except:
         logging.error("unknown exception running subprocess with mysqldump")
 
+
+def clear_backups(save_backups_to, days_to_save_backups):
+    # Check if save_backups_to is a folder.
+    if not os.path.exists(save_backups_to): 
+        logging.error("can not find folder where backups are saved")
+
+    # Get list of all files only in the given directory
+    list_of_files = filter(os.path.isfile, glob.glob(save_backups_to + '/*.zip'))
+
+    # Sort list of files based on last modification time in ascending order
+    list_of_files = sorted(list_of_files, key = os.path.getmtime)
+
+    # If we have less or equal of 7 backups then exit.
+    if len(list_of_files) <= days_to_save_backups:
+        logging.info("we have less then or equals to 7 backups saved, exit without doing anything")
+        sys.exit(0)
+
+    list_of_files.reverse()
+    count = 0
+
+    # Only save days_to_save_backups days of backups, remove other.
+    for file in list_of_files:
+        count = count + 1
+        if count <= days_to_save_backups:
+            continue
+        else:
+            os.remove(file)
+            logging.info("removing: " + save_backups_to + "/" + file)
+
 if __name__ == "__main__":
     # Working folder.
     tmp_folder = config["DEFAULT"]["tmp_folder"]
@@ -71,6 +101,9 @@ if __name__ == "__main__":
 
     # Mariadb root password.
     mariadb_root_password = config["mariadb"]["root_password"]
+
+    # Number of days to save backups.
+    days_to_save_backups = int(config["DEFAULT"]["days_to_save_backups"])
 
     # Create tmp folder.
     if not os.path.exists(tmp_folder): 
@@ -101,3 +134,6 @@ if __name__ == "__main__":
 
     # Remove content in tmp folder.
     shutil.rmtree(tmp_folder_date)
+
+    # Remove old backups.
+    clear_backups(save_backups_to, days_to_save_backups)
