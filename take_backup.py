@@ -43,9 +43,9 @@ def backup_folders(tar_bin, folders_to_backup, src_folder):
             logging.error("unkonwn exception running subprocess with tar")
 
 # Take backup of mariadb databases.
-def backup_mariadb(mariadbdump_bin, mariadb_root_password, tmp_folder_date):
+def backup_mariadb(mariadbdump_bin, mariadb_root_password, dst_folder):
     try:
-        f = open(tmp_folder_date + "/" + "full_db_dump.sql","w")
+        f = open(dst_folder + "/" + "full_db_dump.sql","w")
         output = subprocess.run([mariadbdump_bin,"-h","localhost","--all-databases","-uroot","-p" + mariadb_root_password], check=True, stdout = f)
         if output.returncode != 0:
             logging.error("returncode of cmd mysqldump is none zero")
