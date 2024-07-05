@@ -27,14 +27,14 @@ config.read(conf_file)
 logging.basicConfig(filename=config["logging"]["logfile"], format='%(asctime)s: %(levelname)s: %(message)s', level=logging.ERROR)
 
 # Take backup of folders.
-def backup_folders(tar_bin, folders_to_backup, tmp_folder_date):
+def backup_folders(tar_bin, folders_to_backup, src_folder):
     # Take backup of folders in folders_to_backup.
     for folder in folders_to_backup:
         # Create tar archive name.
         backup_name = folder.replace("/","_") + ".tar.gz"
 
         try:
-            output = subprocess.run([tar_bin,"-czf", tmp_folder_date + "/" + backup_name, folder], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            output = subprocess.run([tar_bin,"-czf", src_folder + "/" + backup_name, folder], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             if output.returncode != 0:
                 logging.error("returncode of cmd tar is non zero")
         except subprocess.CalledProcessError as e:
