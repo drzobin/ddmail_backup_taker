@@ -119,7 +119,7 @@ if __name__ == "__main__":
         os.makedirs(tmp_folder + "/" + today)
     tmp_folder_date = tmp_folder + "/" + today
 
-    # Take backup og folers.
+    # Take backup of folers.
     backup_folders(tar_bin, folders_to_backup, tmp_folder_date)
     
     # Take backup of mariadb all databases.
