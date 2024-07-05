@@ -60,10 +60,10 @@ def clear_backups(save_backups_to, days_to_save_backups):
     if not os.path.exists(save_backups_to): 
         logging.error("can not find folder where backups are saved")
 
-    # Get list of all files only in the given directory
+    # Get list of all files only in the given directory.
     list_of_files = filter(os.path.isfile, glob.glob(save_backups_to + '/*.zip'))
 
-    # Sort list of files based on last modification time in ascending order
+    # Sort list of files based on last modification time in ascending order.
     list_of_files = sorted(list_of_files, key = os.path.getmtime)
 
     # If we have less or equal of 7 backups then exit.
