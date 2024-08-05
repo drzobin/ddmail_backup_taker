@@ -7,6 +7,7 @@ import datetime
 import sys
 import argparse
 import glob
+import hashlib
 
 # Get arguments from args.
 parser = argparse.ArgumentParser(description="Backup for ddmail")
@@ -26,6 +27,7 @@ config.read(conf_file)
 # Configure logging.
 logging.basicConfig(filename=config["logging"]["logfile"], format='%(asctime)s: %(levelname)s: %(message)s', level=logging.ERROR)
 
+
 # Take backup of folders.
 def backup_folders(tar_bin, folders_to_backup, dst_folder):
     # Take backup of folders in folders_to_backup.
@@ -42,6 +44,7 @@ def backup_folders(tar_bin, folders_to_backup, dst_folder):
         except:
             logging.error("unkonwn exception running subprocess with tar")
 
+
 # Take backup of mariadb databases.
 def backup_mariadb(mariadbdump_bin, mariadb_root_password, dst_folder):
     try:
@@ -53,6 +56,7 @@ def backup_mariadb(mariadbdump_bin, mariadb_root_password, dst_folder):
         logging.error("returncode of cmd mysqldump is none zero")
     except:
         logging.error("unknown exception running subprocess with mysqldump")
+
 
 # Clear/remove old backups.
 def clear_backups(save_backups_to, days_to_save_backups):
@@ -82,6 +86,24 @@ def clear_backups(save_backups_to, days_to_save_backups):
         else:
             os.remove(file)
             logging.info("removing: " + save_backups_to + "/" + file)
+
+
+# sha256 checksum of file.
+def sha256_of_file(file):
+    # 65kb
+    buf_size = 65536
+
+    sha256 = hashlib.sha256()
+
+    with open(file, 'rb') as f:
+        while True:
+            data = f.read(buf_size)
+            if not data:
+                break
+            sha256.update(data)
+
+    return sha256.hexdigest()
+
 
 if __name__ == "__main__":
     # Working folder.
