@@ -26,7 +26,7 @@ conf_file = args.config_file
 config.read(conf_file)
     
 # Configure logging.
-logging.basicConfig(filename=config["logging"]["logfile"], format='%(asctime)s: %(levelname)s: %(message)s', level=logging.ERROR)
+logging.basicConfig(filename=config["logging"]["logfile"], format='%(asctime)s: %(levelname)s: %(message)s', level=logging.INFO)
 
 
 # Take backup of folders.
@@ -105,9 +105,8 @@ def sha256_of_file(file):
 
     return sha256.hexdigest()
         
-# Send backup to backup_receiver, should be located at different dc and location.
+# Send backup to backup_receiver, backup_receiver should be located at different DC and location.
 def send_to_backup_receiver(backup_path, filename, url, password):
-    #print("password:" + password)
     # Get the sha256 checksum of file.
     sha256 = sha256_of_file(backup_path)
 
@@ -118,9 +117,14 @@ def send_to_backup_receiver(backup_path, filename, url, password):
             "sha256": sha256
             }
 
+    # Send backup to backup_receiver
     r = requests.post(url, files=files, data=data)
-    #print(r.status_code)
-    #print(r.content)
+
+    # Log result.
+    if str(r.status_code) == "200" and r.text == "done":
+        logging.info("successfully sent backup to backup_receiver")
+    else:
+        logging.error("failed to sent backup to backup_receiver")
 
 
 if __name__ == "__main__":
