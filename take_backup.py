@@ -8,6 +8,7 @@ import sys
 import argparse
 import glob
 import hashlib
+import requests
 
 # Get arguments from args.
 parser = argparse.ArgumentParser(description="Backup for ddmail")
@@ -103,6 +104,23 @@ def sha256_of_file(file):
             sha256.update(data)
 
     return sha256.hexdigest()
+        
+# Send backup to backup_receiver, should be located at different dc and location.
+def send_to_backup_receiver(backup_path, filename, url, password):
+    #print("password:" + password)
+    # Get the sha256 checksum of file.
+    sha256 = sha256_of_file(backup_path)
+
+    files = {"file": open(backup_path,"rb")}
+    data = {
+            "filename": filename,
+            "password": password,
+            "sha256": sha256
+            }
+
+    r = requests.post(url, files=files, data=data)
+    #print(r.status_code)
+    #print(r.content)
 
 
 if __name__ == "__main__":
@@ -149,13 +167,22 @@ if __name__ == "__main__":
         backup_mariadb(mariadbdump_bin, mariadb_root_password, tmp_folder_date)
 
     # Compress all files with zip.
-    shutil.make_archive(save_backups_to + "/" + "backup." + today, 'zip', tmp_folder_date)
+    backup_filename = "backup." + today + ".zip"
+    backup_path = save_backups_to + "/" + "backup." + today + ".zip"
+    shutil.make_archive(backup_path.replace(".zip",""), 'zip', tmp_folder_date)
 
     # Change premissions on backupsfile.
-    os.chmod(save_backups_to + "/" + "backup." + today + ".zip", 0o640)
+    os.chmod(backup_path, 0o640)
 
     # Remove content in tmp folder.
     shutil.rmtree(tmp_folder_date)
+
+    # Send backups to backup_receiver.
+    if config["backup_receiver"]["use"] == "Yes":
+        url = config["backup_receiver"]["url"]
+        password = config["backup_receiver"]["password"]
+
+        send_to_backup_receiver(backup_path, backup_filename, url, password)
 
     # Remove old backups.
     clear_backups(save_backups_to, days_to_save_backups)
