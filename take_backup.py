@@ -118,7 +118,7 @@ def send_to_backup_receiver(backup_path, filename, url, password):
             }
 
     # Send backup to backup_receiver
-    r = requests.post(url, files=files, data=data)
+    r = requests.post(url, files=files, data=data, timeout=10)
 
     # Log result.
     if str(r.status_code) == "200" and r.text == "done":
