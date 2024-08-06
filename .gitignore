@@ -1,2 +1,6 @@
+config.ini
+.coverage
 __pycache__
-/config.ini
+backup_taker/__pycache__/
+backup_taker/tests/__pycache__/
+backup_taker/backup_taker/__pycache__/
