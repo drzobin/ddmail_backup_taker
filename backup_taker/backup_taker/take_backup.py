@@ -9,6 +9,7 @@ import argparse
 import glob
 import hashlib
 import requests
+import platform
 
 # Get arguments from args.
 parser = argparse.ArgumentParser(description="Backup for ddmail")
@@ -104,7 +105,8 @@ def sha256_of_file(file):
             sha256.update(data)
 
     return sha256.hexdigest()
-        
+
+
 # Send backup to backup_receiver, backup_receiver should be located at different DC and location.
 def send_to_backup_receiver(backup_path, filename, url, password):
     # Get the sha256 checksum of file.
@@ -171,8 +173,9 @@ if __name__ == "__main__":
         backup_mariadb(mariadbdump_bin, mariadb_root_password, tmp_folder_date)
 
     # Compress all files with zip.
-    backup_filename = "backup." + today + ".zip"
-    backup_path = save_backups_to + "/" + "backup." + today + ".zip"
+    hostname = platform.uname().node
+    backup_filename = "backup." + hostname + "." + today + ".zip"
+    backup_path = save_backups_to + "/" + backup_filename
     shutil.make_archive(backup_path.replace(".zip",""), 'zip', tmp_folder_date)
 
     # Change premissions on backupsfile.
