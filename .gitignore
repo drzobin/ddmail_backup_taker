@@ -4,3 +4,4 @@ __pycache__
 backup_taker/__pycache__/
 backup_taker/tests/__pycache__/
 backup_taker/backup_taker/__pycache__/
+backup_taker/venv/
