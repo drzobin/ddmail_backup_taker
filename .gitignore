@@ -1,4 +1,4 @@
-config.ini
+backup_taker/config.ini
 .coverage
 __pycache__
 backup_taker/__pycache__/
