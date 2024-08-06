@@ -73,7 +73,7 @@ def clear_backups(save_backups_to, days_to_save_backups):
 
     # If we have less or equal of 7 backups then exit.
     if len(list_of_files) <= days_to_save_backups:
-        logging.info("we have less then or equals to 7 backups saved, exit without doing anything")
+        logging.info("we have less then or equals to 7 backups saved, exit without deleting anything")
         sys.exit(0)
 
     list_of_files.reverse()
