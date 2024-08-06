@@ -1,0 +1,4 @@
+pytest
+coverage
+requests
+python-gnupg
