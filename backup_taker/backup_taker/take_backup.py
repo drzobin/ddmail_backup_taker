@@ -10,6 +10,8 @@ import glob
 import hashlib
 import requests
 import platform
+import gnupg
+
 
 # Get arguments from args.
 parser = argparse.ArgumentParser(description="Backup for ddmail")
@@ -105,6 +107,28 @@ def sha256_of_file(file):
             sha256.update(data)
 
     return sha256.hexdigest()
+        
+
+# Encrypt file src_file with gpg using pubkey with fingerprint pubkey_fingerprint and save the encrypted file to dst_folder adding .gpg to src_filename.
+def gpg_encrypt(pubkey_fingerprint, src_file, src_filename, dst_folder):
+    gpg = gnupg.GPG()
+    gpg.encoding = 'utf-8'
+
+    stream = open(src_file, 'rb')
+    encrypted_data = gpg.encrypt_file(stream, pubkey_fingerprint, armor = False, always_trust = True)
+    
+    # Encryption has failed.
+    if encrypted_data.ok != True:
+        logging.error("gpg encryption failed with message " + str(encrypted_data.status))
+        return False
+
+    encrypted_file = dst_folder + "/" + src_filename + ".gpg"
+
+    with open(encrypted_file, "wb") as file:
+        file.write(encrypted_data.data)
+
+    logging.info("successfully encrypted backup")
+    return True
 
 
 # Send backup to backup_receiver, backup_receiver should be located at different DC and location.
@@ -130,6 +154,8 @@ def send_to_backup_receiver(backup_path, filename, url, password):
 
 
 if __name__ == "__main__":
+    logging.info("starting backup job")
+
     # Working folder.
     tmp_folder = config["DEFAULT"]["tmp_folder"]
 
@@ -183,6 +209,23 @@ if __name__ == "__main__":
 
     # Remove content in tmp folder.
     shutil.rmtree(tmp_folder_date)
+    
+    # Encrypt backup with openPGP public key.
+    if config["gpg_encryption"]["use"] == "Yes":
+        pubkey_fingerprint = config["gpg_encryption"]["pubkey_fingerprint"]
+
+        status = gpg_encrypt(pubkey_fingerprint, backup_path, backup_filename, save_backups_to)
+
+        # If encryption fails program will exit with 1.
+        if status != True:
+            sys.exit(1)
+
+        # Remove unencrypted backup.
+        os.remove(backup_path)
+
+        # Set vars that should contain the backups full path and filename to the encrypted backup file.
+        backup_filename = backup_filename + ".gpg"
+        backup_path = save_backups_to + "/" + backup_filename
 
     # Send backups to backup_receiver.
     if config["backup_receiver"]["use"] == "Yes":
@@ -193,3 +236,5 @@ if __name__ == "__main__":
 
     # Remove old backups.
     clear_backups(save_backups_to, days_to_save_backups)
+    
+    logging.info("backup job finished succesfully")
