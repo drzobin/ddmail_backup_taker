@@ -116,7 +116,7 @@ def gpg_encrypt(pubkey_fingerprint, src_file, src_filename, dst_folder):
 
     stream = open(src_file, 'rb')
     encrypted_data = gpg.encrypt_file(stream, pubkey_fingerprint, armor = False, always_trust = True)
-    
+
     # Encryption has failed.
     if encrypted_data.ok != True:
         logging.error("gpg encryption failed with message " + str(encrypted_data.status))
@@ -178,22 +178,22 @@ if __name__ == "__main__":
     days_to_save_backups = int(config["DEFAULT"]["days_to_save_backups"])
 
     # Create tmp folder.
-    if not os.path.exists(tmp_folder): 
-        os.makedirs(tmp_folder) 
+    if not os.path.exists(tmp_folder):
+        os.makedirs(tmp_folder)
 
     # Create folder to save backups to.
-    if not os.path.exists(save_backups_to): 
+    if not os.path.exists(save_backups_to):
         os.makedirs(save_backups_to)
 
     # Create tmp folder for todays date.
     today = str(datetime.date.today())
-    if not os.path.exists(tmp_folder + "/" + today): 
+    if not os.path.exists(tmp_folder + "/" + today):
         os.makedirs(tmp_folder + "/" + today)
     tmp_folder_date = tmp_folder + "/" + today
 
     # Take backup of folders.
     backup_folders(tar_bin, folders_to_backup, tmp_folder_date)
-    
+
     # Take backup of mariadb all databases.
     if config["mariadb"]["use"] == "Yes":
         backup_mariadb(mariadbdump_bin, mariadb_root_password, tmp_folder_date)
@@ -209,7 +209,7 @@ if __name__ == "__main__":
 
     # Remove content in tmp folder.
     shutil.rmtree(tmp_folder_date)
-    
+
     # Encrypt backup with openPGP public key.
     if config["gpg_encryption"]["use"] == "Yes":
         pubkey_fingerprint = config["gpg_encryption"]["pubkey_fingerprint"]
