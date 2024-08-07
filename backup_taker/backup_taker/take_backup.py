@@ -13,30 +13,9 @@ import platform
 import gnupg
 
 
-# Get arguments from args.
-parser = argparse.ArgumentParser(description="Backup for ddmail")
-parser.add_argument(
-        '--config-file',
-        type=str,
-        help='Full path to config file.',
-        required=True
-        )
-
-args = parser.parse_args()
-
-# Check that config file exsist and is a file.
-if os.path.isfile(args.config_file) is False:
-    print("config file do not exist or is not a file.")
-    sys.exit(1)
-
-# Import config file.
-config = configparser.ConfigParser()
-conf_file = args.config_file
-config.read(conf_file)
-
 # Configure logging.
 logging.basicConfig(
-        filename=config["logging"]["logfile"],
+        filename="/var/log/ddmail_backup_taker.log",
         format='%(asctime)s: %(levelname)s: %(message)s',
         level=logging.INFO
         )
@@ -191,6 +170,27 @@ def send_to_backup_receiver(backup_path, filename, url, password):
 if __name__ == "__main__":
     logging.info("starting backup job")
 
+    # Get arguments from args.
+    parser = argparse.ArgumentParser(description="Backup for ddmail")
+    parser.add_argument(
+            '--config-file',
+            type=str,
+            help='Full path to config file.',
+            required=True
+            )
+
+    args = parser.parse_args()
+
+    # Check that config file exsist and is a file.
+    if os.path.isfile(args.config_file) is False:
+        print("config file do not exist or is not a file.")
+        sys.exit(1)
+
+    # Import config file.
+    config = configparser.ConfigParser()
+    conf_file = args.config_file
+    config.read(conf_file)
+
     # Working folder.
     tmp_folder = config["DEFAULT"]["tmp_folder"]
 
@@ -261,7 +261,7 @@ if __name__ == "__main__":
                 )
 
         # If encryption fails program will exit with 1.
-        if status is True:
+        if status is not True:
             sys.exit(1)
 
         # Remove unencrypted backup.
