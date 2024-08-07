@@ -65,7 +65,7 @@ def backup_mariadb(mariadbdump_bin, mariadb_root_password, dst_folder):
                 )
         if output.returncode != 0:
             logging.error("returncode of cmd mysqldump is none zero")
-    except subprocess.CalledProcessError as e:
+    except subprocess.CalledProcessError:
         logging.error("returncode of cmd mysqldump is none zero")
     except:
         logging.error("unknown exception running subprocess with mysqldump")
@@ -116,7 +116,7 @@ def sha256_of_file(file):
             sha256.update(data)
 
     return sha256.hexdigest()
-        
+
 
 # Encrypt file src_file with gpg using pubkey with fingerprint pubkey_fingerprint and save the encrypted file to dst_folder adding .gpg to src_filename.
 def gpg_encrypt(pubkey_fingerprint, src_file, src_filename, dst_folder):
