@@ -108,6 +108,10 @@ def sha256_of_file(file):
 
     sha256 = hashlib.sha256()
 
+    # Check if file exist.
+    if os.path.exists(file) is not True:
+        return None
+
     with open(file, 'rb') as f:
         while True:
             data = f.read(buf_size)
