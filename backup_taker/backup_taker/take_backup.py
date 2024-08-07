@@ -15,7 +15,13 @@ import gnupg
 
 # Get arguments from args.
 parser = argparse.ArgumentParser(description="Backup for ddmail")
-parser.add_argument('--config-file', type=str, help='Full path to config file.', required=True)
+parser.add_argument(
+        '--config-file',
+        type=str,
+        help='Full path to config file.',
+        required=True
+        )
+
 args = parser.parse_args()
 
 # Check that config file exsist and is a file.
@@ -29,7 +35,11 @@ conf_file = args.config_file
 config.read(conf_file)
 
 # Configure logging.
-logging.basicConfig(filename=config["logging"]["logfile"], format='%(asctime)s: %(levelname)s: %(message)s', level=logging.INFO)
+logging.basicConfig(
+        filename=config["logging"]["logfile"],
+        format='%(asctime)s: %(levelname)s: %(message)s',
+        level=logging.INFO
+        )
 
 
 # Take backup of folders.
@@ -40,7 +50,15 @@ def backup_folders(tar_bin, folders_to_backup, dst_folder):
         backup_name = folder.replace("/", "_") + ".tar.gz"
 
         try:
-            output = subprocess.run([tar_bin, "-czf", dst_folder + "/" + backup_name, folder], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            output = subprocess.run(
+                    [tar_bin,
+                     "-czf",
+                     dst_folder + "/" + backup_name,
+                     folder],
+                    check=True,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL
+                    )
             if output.returncode != 0:
                 logging.error("returncode of cmd tar is non zero")
         except subprocess.CalledProcessError:
@@ -78,14 +96,17 @@ def clear_backups(save_backups_to, days_to_save_backups):
         logging.error("can not find folder where backups are saved")
 
     # Get list of all files only in the given directory.
-    list_of_files = filter(os.path.isfile, glob.glob(save_backups_to + '/*.zip'))
+    list_of_files = filter(
+            os.path.isfile,
+            glob.glob(save_backups_to + '/*.zip')
+            )
 
     # Sort list of files based on last modification time in ascending order.
     list_of_files = sorted(list_of_files, key=os.path.getmtime)
 
     # If we have less or equal of 7 backups then exit.
     if len(list_of_files) <= days_to_save_backups:
-        logging.info("we have less then or equals to 7 backups saved, exit without deleting anything")
+        logging.info("too few backups for clearing old backups")
         return
 
     list_of_files.reverse()
@@ -124,11 +145,16 @@ def gpg_encrypt(pubkey_fingerprint, src_file, src_filename, dst_folder):
     gpg.encoding = 'utf-8'
 
     stream = open(src_file, 'rb')
-    encrypted_data = gpg.encrypt_file(stream, pubkey_fingerprint, armor=False, always_trust=True)
+    encrypted_data = gpg.encrypt_file(
+            stream,
+            pubkey_fingerprint,
+            armor=False,
+            always_trust=True
+            )
 
     # Encryption has failed.
     if encrypted_data.ok is not True:
-        logging.error("gpg encryption failed with message " + str(encrypted_data.status))
+        logging.error("encryption failed with " + str(encrypted_data.status))
         return False
 
     encrypted_file = dst_folder + "/" + src_filename + ".gpg"
@@ -140,7 +166,7 @@ def gpg_encrypt(pubkey_fingerprint, src_file, src_filename, dst_folder):
     return True
 
 
-# Send backup to backup_receiver, backup_receiver should be located at different DC and location.
+# Send locally saved backup to backup_receiver.
 def send_to_backup_receiver(backup_path, filename, url, password):
     # Get the sha256 checksum of file.
     sha256 = sha256_of_file(backup_path)
@@ -211,7 +237,11 @@ if __name__ == "__main__":
     hostname = platform.uname().node
     backup_filename = "backup." + hostname + "." + today + ".zip"
     backup_path = save_backups_to + "/" + backup_filename
-    shutil.make_archive(backup_path.replace(".zip", ""), 'zip', tmp_folder_date)
+    shutil.make_archive(
+            backup_path.replace(".zip", ""),
+            'zip',
+            tmp_folder_date
+            )
 
     # Change premissions on backupsfile.
     os.chmod(backup_path, 0o640)
@@ -223,7 +253,12 @@ if __name__ == "__main__":
     if config["gpg_encryption"]["use"] == "Yes":
         pubkey_fingerprint = config["gpg_encryption"]["pubkey_fingerprint"]
 
-        status = gpg_encrypt(pubkey_fingerprint, backup_path, backup_filename, save_backups_to)
+        status = gpg_encrypt(
+                pubkey_fingerprint,
+                backup_path,
+                backup_filename,
+                save_backups_to
+                )
 
         # If encryption fails program will exit with 1.
         if status is True:
@@ -232,7 +267,7 @@ if __name__ == "__main__":
         # Remove unencrypted backup.
         os.remove(backup_path)
 
-        # Set vars that should contain the backups full path and filename to the encrypted backup file.
+        # Set names and path to match the encryptes backup file.
         backup_filename = backup_filename + ".gpg"
         backup_path = save_backups_to + "/" + backup_filename
 
