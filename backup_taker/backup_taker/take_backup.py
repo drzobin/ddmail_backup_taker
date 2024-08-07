@@ -22,14 +22,13 @@ logging.basicConfig(
 
 
 def backup_folders(tar_bin, folders_to_backup, dst_folder):
-    """Tar folders and save the tar files in disc.
+    """Tar folders and save the compressed tar files on disc.
 
     Keyword arguments:
     tar_bin -- full location of the tar binary.
-    folders_to_backup -- string with folders separated with space.
+    folders_to_backup -- list with folders to backup.
     dst_folder -- save all tar files to this folder.
     """
-
     # Take backup of folders in folders_to_backup.
     for folder in folders_to_backup:
         # Create tar archive name.
@@ -61,7 +60,6 @@ def backup_mariadb(mariadbdump_bin, mariadb_root_password, dst_folder):
     mariadb_root_password -- mariadb password for user root.
     dst_folder -- save the database dumpt to this folder.
     """
-
     try:
         f = open(dst_folder + "/" + "full_db_dump.sql", "w")
         output = subprocess.run(
@@ -89,7 +87,6 @@ def clear_backups(save_backups_to, days_to_save_backups):
     save_backups_to -- folder where backups is stored that will be removed.
     days_to_save_backups -- number of days before backups are removed.
     """
-
     # Check if save_backups_to is a folder.
     if not os.path.exists(save_backups_to):
         logging.error("can not find folder where backups are saved")
@@ -127,7 +124,6 @@ def sha256_of_file(file):
     Keyword arguments:
     file -- full path to file that we should take the sha256 checksum of.
     """
-
     # 65kb
     buf_size = 65536
 
@@ -156,7 +152,6 @@ def gpg_encrypt(pubkey_fingerprint, src_file, src_filename, dst_folder):
     src_filename -- filename of file that should be encrypted.
     dst_folder -- full path to folder to save encrypted file in.
     """
-
     gpg = gnupg.GPG()
     gpg.encoding = 'utf-8'
 
@@ -191,7 +186,6 @@ def send_to_backup_receiver(backup_path, filename, url, password):
     url -- url to ddmail_backup_receiver.
     password -- password to ddmail_backup_receiver.
     """
-
     # Get the sha256 checksum of file.
     sha256 = sha256_of_file(backup_path)
 
