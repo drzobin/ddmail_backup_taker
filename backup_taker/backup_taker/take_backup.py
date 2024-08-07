@@ -21,8 +21,15 @@ logging.basicConfig(
         )
 
 
-# Take backup of folders.
 def backup_folders(tar_bin, folders_to_backup, dst_folder):
+    """Tar folders and save the tar files in disc.
+
+    Keyword arguments:
+    tar_bin -- full location of the tar binary.
+    folders_to_backup -- string with folders separated with space.
+    dst_folder -- save all tar files to this folder.
+    """
+
     # Take backup of folders in folders_to_backup.
     for folder in folders_to_backup:
         # Create tar archive name.
@@ -46,8 +53,15 @@ def backup_folders(tar_bin, folders_to_backup, dst_folder):
             logging.error("unkonwn exception running subprocess with tar")
 
 
-# Take backup of mariadb databases.
 def backup_mariadb(mariadbdump_bin, mariadb_root_password, dst_folder):
+    """Take a full dump of all databases in mariadb included with schema.
+
+    Keyword arguments:
+    mariadbdump_bin -- full location of the mariadbdump binary.
+    mariadb_root_password -- mariadb password for user root.
+    dst_folder -- save the database dumpt to this folder.
+    """
+
     try:
         f = open(dst_folder + "/" + "full_db_dump.sql", "w")
         output = subprocess.run(
@@ -68,13 +82,19 @@ def backup_mariadb(mariadbdump_bin, mariadb_root_password, dst_folder):
         logging.error("unknown exception running subprocess with mysqldump")
 
 
-# Clear/remove old backups.
 def clear_backups(save_backups_to, days_to_save_backups):
+    """Clear/remove old backups/files that is older then x amount of days.
+
+    Keyword arguments:
+    save_backups_to -- folder where backups is stored that will be removed.
+    days_to_save_backups -- number of days before backups are removed.
+    """
+
     # Check if save_backups_to is a folder.
     if not os.path.exists(save_backups_to):
         logging.error("can not find folder where backups are saved")
 
-    # Get list of all files only in the given directory.
+    # Get list of zip files in the given directory.
     list_of_files = filter(
             os.path.isfile,
             glob.glob(save_backups_to + '/*.zip')
@@ -101,8 +121,13 @@ def clear_backups(save_backups_to, days_to_save_backups):
             logging.info("removing: " + save_backups_to + "/" + file)
 
 
-# sha256 checksum of file.
 def sha256_of_file(file):
+    """Take sha256 checksum of file on disc.
+
+    Keyword arguments:
+    file -- full path to file that we should take the sha256 checksum of.
+    """
+
     # 65kb
     buf_size = 65536
 
@@ -122,8 +147,16 @@ def sha256_of_file(file):
     return sha256.hexdigest()
 
 
-# Encrypt file src_file with gpg using pubkey with fingerprint pubkey_fingerprint and save the encrypted file to dst_folder adding .gpg to src_filename.
 def gpg_encrypt(pubkey_fingerprint, src_file, src_filename, dst_folder):
+    """Encrypt file with gpg using a public key in the current users keyring.
+
+    Keyword arguments:
+    pubkey_fingerprint -- fingerprint for public key to use for encryption.
+    src_file -- full path to file that should be encrypted.
+    src_filename -- filename of file that should be encrypted.
+    dst_folder -- full path to folder to save encrypted file in.
+    """
+
     gpg = gnupg.GPG()
     gpg.encoding = 'utf-8'
 
@@ -149,8 +182,16 @@ def gpg_encrypt(pubkey_fingerprint, src_file, src_filename, dst_folder):
     return True
 
 
-# Send locally saved backup to backup_receiver.
 def send_to_backup_receiver(backup_path, filename, url, password):
+    """Send backups to remote ddmail_backup_receiver for offsite storage.
+
+    Keyword arguments:
+    backup_path -- full location of file to send.
+    filename -- filename of file to send.
+    url -- url to ddmail_backup_receiver.
+    password -- password to ddmail_backup_receiver.
+    """
+
     # Get the sha256 checksum of file.
     sha256 = sha256_of_file(backup_path)
 
@@ -172,6 +213,8 @@ def send_to_backup_receiver(backup_path, filename, url, password):
 
 
 if __name__ == "__main__":
+    """Main function """
+
     logging.info("starting backup job")
 
     # Get arguments from args.
