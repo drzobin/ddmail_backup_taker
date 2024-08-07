@@ -53,7 +53,16 @@ def backup_folders(tar_bin, folders_to_backup, dst_folder):
 def backup_mariadb(mariadbdump_bin, mariadb_root_password, dst_folder):
     try:
         f = open(dst_folder + "/" + "full_db_dump.sql", "w")
-        output = subprocess.run([mariadbdump_bin, "-h", "localhost", "--all-databases", "-uroot", "-p" + mariadb_root_password], check=True, stdout = f)
+        output = subprocess.run(
+                [mariadbdump_bin,
+                 "-h",
+                 "localhost",
+                 "--all-databases",
+                 "-uroot",
+                 "-p" + mariadb_root_password],
+                check=True,
+                stdout=f
+                )
         if output.returncode != 0:
             logging.error("returncode of cmd mysqldump is none zero")
     except subprocess.CalledProcessError as e:
@@ -65,14 +74,14 @@ def backup_mariadb(mariadbdump_bin, mariadb_root_password, dst_folder):
 # Clear/remove old backups.
 def clear_backups(save_backups_to, days_to_save_backups):
     # Check if save_backups_to is a folder.
-    if not os.path.exists(save_backups_to): 
+    if not os.path.exists(save_backups_to):
         logging.error("can not find folder where backups are saved")
 
     # Get list of all files only in the given directory.
     list_of_files = filter(os.path.isfile, glob.glob(save_backups_to + '/*.zip'))
 
     # Sort list of files based on last modification time in ascending order.
-    list_of_files = sorted(list_of_files, key = os.path.getmtime)
+    list_of_files = sorted(list_of_files, key=os.path.getmtime)
 
     # If we have less or equal of 7 backups then exit.
     if len(list_of_files) <= days_to_save_backups:
@@ -115,10 +124,10 @@ def gpg_encrypt(pubkey_fingerprint, src_file, src_filename, dst_folder):
     gpg.encoding = 'utf-8'
 
     stream = open(src_file, 'rb')
-    encrypted_data = gpg.encrypt_file(stream, pubkey_fingerprint, armor = False, always_trust = True)
+    encrypted_data = gpg.encrypt_file(stream, pubkey_fingerprint, armor=False, always_trust=True)
 
     # Encryption has failed.
-    if encrypted_data.ok != True:
+    if encrypted_data.ok is not True:
         logging.error("gpg encryption failed with message " + str(encrypted_data.status))
         return False
 
