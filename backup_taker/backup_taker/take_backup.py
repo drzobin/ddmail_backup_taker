@@ -27,7 +27,7 @@ if os.path.isfile(args.config_file) is False:
 config = configparser.ConfigParser()
 conf_file = args.config_file
 config.read(conf_file)
-    
+
 # Configure logging.
 logging.basicConfig(filename=config["logging"]["logfile"], format='%(asctime)s: %(levelname)s: %(message)s', level=logging.INFO)
 
@@ -37,10 +37,10 @@ def backup_folders(tar_bin, folders_to_backup, dst_folder):
     # Take backup of folders in folders_to_backup.
     for folder in folders_to_backup:
         # Create tar archive name.
-        backup_name = folder.replace("/","_") + ".tar.gz"
+        backup_name = folder.replace("/", "_") + ".tar.gz"
 
         try:
-            output = subprocess.run([tar_bin,"-czf", dst_folder + "/" + backup_name, folder], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            output = subprocess.run([tar_bin, "-czf", dst_folder + "/" + backup_name, folder], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             if output.returncode != 0:
                 logging.error("returncode of cmd tar is non zero")
         except subprocess.CalledProcessError:
@@ -52,8 +52,8 @@ def backup_folders(tar_bin, folders_to_backup, dst_folder):
 # Take backup of mariadb databases.
 def backup_mariadb(mariadbdump_bin, mariadb_root_password, dst_folder):
     try:
-        f = open(dst_folder + "/" + "full_db_dump.sql","w")
-        output = subprocess.run([mariadbdump_bin,"-h","localhost","--all-databases","-uroot","-p" + mariadb_root_password], check=True, stdout = f)
+        f = open(dst_folder + "/" + "full_db_dump.sql", "w")
+        output = subprocess.run([mariadbdump_bin, "-h", "localhost", "--all-databases", "-uroot", "-p" + mariadb_root_password], check=True, stdout = f)
         if output.returncode != 0:
             logging.error("returncode of cmd mysqldump is none zero")
     except subprocess.CalledProcessError as e:
@@ -136,7 +136,7 @@ def send_to_backup_receiver(backup_path, filename, url, password):
     # Get the sha256 checksum of file.
     sha256 = sha256_of_file(backup_path)
 
-    files = {"file": open(backup_path,"rb")}
+    files = {"file": open(backup_path, "rb")}
     data = {
             "filename": filename,
             "password": password,
@@ -202,7 +202,7 @@ if __name__ == "__main__":
     hostname = platform.uname().node
     backup_filename = "backup." + hostname + "." + today + ".zip"
     backup_path = save_backups_to + "/" + backup_filename
-    shutil.make_archive(backup_path.replace(".zip",""), 'zip', tmp_folder_date)
+    shutil.make_archive(backup_path.replace(".zip", ""), 'zip', tmp_folder_date)
 
     # Change premissions on backupsfile.
     os.chmod(backup_path, 0o640)
@@ -217,7 +217,7 @@ if __name__ == "__main__":
         status = gpg_encrypt(pubkey_fingerprint, backup_path, backup_filename, save_backups_to)
 
         # If encryption fails program will exit with 1.
-        if status != True:
+        if status is True:
             sys.exit(1)
 
         # Remove unencrypted backup.
@@ -236,5 +236,4 @@ if __name__ == "__main__":
 
     # Remove old backups.
     clear_backups(save_backups_to, days_to_save_backups)
-    
     logging.info("backup job finished succesfully")
