@@ -191,11 +191,11 @@ if __name__ == "__main__":
         os.makedirs(tmp_folder + "/" + today)
     tmp_folder_date = tmp_folder + "/" + today
 
-    # Take backup of folers.
+    # Take backup of folders.
     backup_folders(tar_bin, folders_to_backup, tmp_folder_date)
     
     # Take backup of mariadb all databases.
-    if config["mariadb"].getboolean("take_backup") == True:
+    if config["mariadb"]["use"] == "Yes":
         backup_mariadb(mariadbdump_bin, mariadb_root_password, tmp_folder_date)
 
     # Compress all files with zip.
