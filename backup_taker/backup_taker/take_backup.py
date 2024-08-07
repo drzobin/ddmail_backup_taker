@@ -19,7 +19,7 @@ parser.add_argument('--config-file', type=str, help='Full path to config file.',
 args = parser.parse_args()
 
 # Check that config file exsist and is a file.
-if os.path.isfile(args.config_file) != True:
+if os.path.isfile(args.config_file) is False:
     print("config file do not exist or is not a file.")
     sys.exit(1)
 
