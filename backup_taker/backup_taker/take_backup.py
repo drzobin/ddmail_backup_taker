@@ -43,7 +43,7 @@ def backup_folders(tar_bin, folders_to_backup, dst_folder):
             output = subprocess.run([tar_bin,"-czf", dst_folder + "/" + backup_name, folder], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             if output.returncode != 0:
                 logging.error("returncode of cmd tar is non zero")
-        except subprocess.CalledProcessError as e:
+        except subprocess.CalledProcessError:
             logging.error("returncode of cmd tar is non zero")
         except:
             logging.error("unkonwn exception running subprocess with tar")
