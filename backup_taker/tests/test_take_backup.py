@@ -45,8 +45,9 @@ def test_backup_folders_test1():
     folders_to_backup = test_folders
     dst_folder = dst_test_folder
 
-    backup_folders(tar_bin, folders_to_backup, dst_folder)
+    worked = backup_folders(tar_bin, folders_to_backup, dst_folder)
 
+    assert worked is True
     assert os.path.exists(dst_test_folder + "/" + "_tmp_test1.tar.gz") is True
     assert os.path.exists(dst_test_folder + "/" + "_tmp_test2.tar.gz") is True
 
