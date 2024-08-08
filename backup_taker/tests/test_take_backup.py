@@ -1,3 +1,4 @@
+"""Test for take_bacup module."""
 from backup_taker.take_backup import sha256_of_file, backup_folders
 import os
 import shutil
@@ -26,7 +27,7 @@ def test_sha256_of_file_test2():
 
 
 def test_backup_folders_test1():
-    """Test backup_folders()"""
+    """Test backup_folders()."""
     test_folders = ["/tmp/test1", "/tmp/test2"]
     for folder in test_folders:
         if os.path.exists(folder):
@@ -59,8 +60,9 @@ def test_backup_folders_test1():
     if os.path.exists(dst_test_folder):
         shutil.rmtree(dst_test_folder)
 
+
 def test_backup_folders_test2():
-    """Test backup_folders() with tar binary location that do not exist"""
+    """Test backup_folders() with tar binary location that do not exist."""
     test_folders = ["/tmp/test1", "/tmp/test2"]
     for folder in test_folders:
         if os.path.exists(folder):
@@ -93,8 +95,9 @@ def test_backup_folders_test2():
     if os.path.exists(dst_test_folder):
         shutil.rmtree(dst_test_folder)
 
+
 def test_backup_folders_test3():
-    """Test backup_folders() with tar binary location that is not tar"""
+    """Test backup_folders() with tar binary location that is not tar."""
     test_folders = ["/tmp/test1", "/tmp/test2"]
     for folder in test_folders:
         if os.path.exists(folder):
@@ -127,8 +130,9 @@ def test_backup_folders_test3():
     if os.path.exists(dst_test_folder):
         shutil.rmtree(dst_test_folder)
 
+
 def test_backup_folders_test4():
-    """Test backup_folders() with dst_folder location that do not exist"""
+    """Test backup_folders() with dst_folder location that do not exist."""
     test_folders = ["/tmp/test1", "/tmp/test2"]
     for folder in test_folders:
         if os.path.exists(folder):
@@ -151,8 +155,9 @@ def test_backup_folders_test4():
     assert os.path.exists(dst_test_folder + "/" + "_tmp_test1.tar.gz") is False
     assert os.path.exists(dst_test_folder + "/" + "_tmp_test2.tar.gz") is False
 
+
 def test_backup_folders_test5():
-    """Test backup_folders() with folders_to_backup that do not exist"""
+    """Test backup_folders() with folders_to_backup that do not exist."""
     test_folders = ["/tmp/test1", "/tmp/test2"]
     for folder in test_folders:
         if os.path.exists(folder):
