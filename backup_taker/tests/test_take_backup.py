@@ -34,6 +34,7 @@ def test_backup_folders_test1():
         if not os.path.exists(folder):
             os.makedirs(folder)
 
+    # Check if test folder exist, if they exist remove and recreate them.
     dst_test_folder = "/tmp/test3"
     if os.path.exists(dst_test_folder):
         shutil.rmtree(dst_test_folder)
@@ -48,3 +49,11 @@ def test_backup_folders_test1():
 
     assert os.path.exists(dst_test_folder + "/" + "_tmp_test1.tar.gz") is True
     assert os.path.exists(dst_test_folder + "/" + "_tmp_test2.tar.gz") is True
+
+    # Remove test folders and tar file.
+    for folder in test_folders:
+        if os.path.exists(folder):
+            shutil.rmtree(folder)
+
+    if os.path.exists(dst_test_folder):
+        shutil.rmtree(dst_test_folder)
