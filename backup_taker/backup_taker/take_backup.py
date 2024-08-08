@@ -126,7 +126,7 @@ def clear_backups(save_backups_to, days_to_save_backups):
     # Get list of zip files in the given directory.
     list_of_files = filter(
             os.path.isfile,
-            glob.glob(save_backups_to + '/*.zip')
+            glob.glob(save_backups_to + '/backup*.zip*')
             )
 
     # Sort list of files based on last modification time in ascending order.
