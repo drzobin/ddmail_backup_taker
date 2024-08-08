@@ -1,7 +1,8 @@
 """Test for take_bacup module."""
-from backup_taker.take_backup import sha256_of_file, backup_folders, backup_mariadb
+from backup_taker.take_backup import sha256_of_file, backup_folders, backup_mariadb, clear_backups
 import os
 import shutil
+import time
 
 # Testfile used in many testcases.
 TESTFILE_PATH = "tests/test_file.txt"
@@ -236,3 +237,76 @@ def test_backup_mariadb_test3():
     worked = backup_mariadb(mariadbdump_bin, mariadb_root_password, dst_test_folder)
 
     assert worked is False
+
+def test_clear_backups_test1():
+    """Test clear_backups() with empty folder."""
+    
+    folder = "/tmp/test_clear_backups"
+    days_to_save_backups = 1
+
+    if os.path.exists(folder):
+        shutil.rmtree(folder)
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+
+    clear_backups(folder, days_to_save_backups)
+
+def test_clear_backups_test2():
+    """Test clear_backups() folder with 3 *.gpg files"""
+    
+    folder = "/tmp/test_clear_backups_test2"
+    days_to_save_backups = 1
+
+    if os.path.exists(folder):
+        shutil.rmtree(folder)
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+
+    test_file1 = folder + "/backup.dev1.2024-08-01.zip.gpg"
+    test_file2 = folder + "/backup.dev1.2024-08-02.zip.gpg"
+    test_file3 = folder + "/backup.dev1.2024-08-03.zip.gpg"
+
+    shutil.copyfile(TESTFILE_PATH, test_file1)
+    time.sleep(1)
+    shutil.copyfile(TESTFILE_PATH, test_file2)
+    time.sleep(1)
+    shutil.copyfile(TESTFILE_PATH, test_file3)
+
+    clear_backups(folder, days_to_save_backups)
+
+    assert os.path.exists(test_file1) is False
+    assert os.path.exists(test_file2) is False
+    assert os.path.exists(test_file3) is True
+
+    if os.path.exists(folder):
+        shutil.rmtree(folder)
+
+def test_clear_backups_test3():
+    """Test clear_backups() folder with 3 *.zip files"""
+    
+    folder = "/tmp/test_clear_backups_test3"
+    days_to_save_backups = 2
+
+    if os.path.exists(folder):
+        shutil.rmtree(folder)
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+
+    test_file1 = folder + "/backup.dev1.2024-08-01.zip"
+    test_file2 = folder + "/backup.dev1.2024-08-02.zip"
+    test_file3 = folder + "/backup.dev1.2024-08-03.zip"
+
+    shutil.copyfile(TESTFILE_PATH, test_file1)
+    time.sleep(1)
+    shutil.copyfile(TESTFILE_PATH, test_file2)
+    time.sleep(1)
+    shutil.copyfile(TESTFILE_PATH, test_file3)
+
+    clear_backups(folder, days_to_save_backups)
+
+    assert os.path.exists(test_file1) is False
+    assert os.path.exists(test_file2) is True
+    assert os.path.exists(test_file3) is True
+
+    if os.path.exists(folder):
+        shutil.rmtree(folder)
