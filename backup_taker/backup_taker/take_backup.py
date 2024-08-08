@@ -302,7 +302,7 @@ if __name__ == "__main__":
     # Take backup of folders.
     worked = backup_folders(tar_bin, folders_to_backup, tmp_folder_date)
 
-    # check if backup_folders succeded.
+    # Check if backup_folders succeded.
     if worked is True:
         logging.info("backup_folders finished succesfully")
     else:
@@ -323,7 +323,7 @@ if __name__ == "__main__":
             tmp_folder_date
             )
 
-    # Change premissions on backupsfile.
+    # Change premissions on backup file.
     os.chmod(backup_path, 0o640)
 
     # Remove content in tmp folder.
@@ -342,6 +342,7 @@ if __name__ == "__main__":
 
         # If encryption fails program will exit with 1.
         if status is not True:
+            logging.error("gpg encryption failed")
             sys.exit(1)
 
         # Remove unencrypted backup.
