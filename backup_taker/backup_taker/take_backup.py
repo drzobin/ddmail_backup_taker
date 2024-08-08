@@ -78,6 +78,17 @@ def backup_mariadb(mariadbdump_bin, mariadb_root_password, dst_folder):
     mariadb_root_password -- mariadb password for user root.
     dst_folder -- save the database dumpt to this folder.
     """
+    # Check if mariadbdump binary exist.
+    if not os.path.exists(mariadbdump_bin):
+        logging.error("mariadbdump binary location is wrong")
+        return False
+
+    # Check if dst_folder exist.
+    if not os.path.exists(dst_folder):
+        logging.error("dst_folder do not exist")
+        return False
+
+    # Take backup of mariadb all databases.
     try:
         f = open(dst_folder + "/" + "full_db_dump.sql", "w")
         output = subprocess.run(
@@ -92,8 +103,13 @@ def backup_mariadb(mariadbdump_bin, mariadb_root_password, dst_folder):
                 )
         if output.returncode != 0:
             logging.error("returncode of cmd mysqldump is none zero")
+            return False
     except subprocess.CalledProcessError:
         logging.error("returncode of cmd mysqldump is none zero")
+        return False
+
+    # All worked as expected.
+    return True
 
 
 def clear_backups(save_backups_to, days_to_save_backups):
