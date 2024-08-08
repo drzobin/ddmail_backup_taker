@@ -29,8 +29,24 @@ def backup_folders(tar_bin, folders_to_backup, dst_folder):
     folders_to_backup -- list with folders to backup.
     dst_folder -- save all tar files to this folder.
     """
+    # Check if tar binary exist.
+    if not os.path.exists(tar_bin):
+            logging.error("tar binary location is wrong")
+            return False
+
+    # Check if dst_foler exist.
+    if not os.path.exists(dst_folder):
+            logging.error("dst_folder do not exist")
+            return False
+
     # Take backup of folders in folders_to_backup.
     for folder in folders_to_backup:
+        
+        # Check if folder exist.
+        if not os.path.exists(folder):
+            logging.error("folder do not exist")
+            return False
+        
         # Create tar archive name.
         backup_name = folder.replace("/", "_") + ".tar.gz"
 
@@ -50,6 +66,8 @@ def backup_folders(tar_bin, folders_to_backup, dst_folder):
             logging.error("returncode of cmd tar is non zero")
         except:
             logging.error("unkonwn exception running subprocess with tar")
+
+    return True
 
 
 def backup_mariadb(mariadbdump_bin, mariadb_root_password, dst_folder):
@@ -268,7 +286,14 @@ if __name__ == "__main__":
     tmp_folder_date = tmp_folder + "/" + today
 
     # Take backup of folders.
-    backup_folders(tar_bin, folders_to_backup, tmp_folder_date)
+    worked = backup_folders(tar_bin, folders_to_backup, tmp_folder_date)
+
+    # check if backup_folders succeded.
+    if worked is True:
+        logging.info("backup_folders finished succesfully")
+    else:
+        logging.error("backup_folders failed")
+        sys.exit(1)
 
     # Take backup of mariadb all databases.
     if config["mariadb"]["use"] == "Yes":
