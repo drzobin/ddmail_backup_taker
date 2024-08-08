@@ -31,22 +31,22 @@ def backup_folders(tar_bin, folders_to_backup, dst_folder):
     """
     # Check if tar binary exist.
     if not os.path.exists(tar_bin):
-            logging.error("tar binary location is wrong")
-            return False
+        logging.error("tar binary location is wrong")
+        return False
 
     # Check if dst_foler exist.
     if not os.path.exists(dst_folder):
-            logging.error("dst_folder do not exist")
-            return False
+        logging.error("dst_folder do not exist")
+        return False
 
     # Take backup of folders in folders_to_backup.
     for folder in folders_to_backup:
-        
+
         # Check if folder exist.
         if not os.path.exists(folder):
             logging.error("folder do not exist")
             return False
-        
+
         # Create tar archive name.
         backup_name = folder.replace("/", "_") + ".tar.gz"
 
@@ -65,7 +65,7 @@ def backup_folders(tar_bin, folders_to_backup, dst_folder):
         except subprocess.CalledProcessError:
             logging.error("returncode of cmd tar is non zero")
             return False
-    
+
     # All worked as expected.
     return True
 
@@ -94,8 +94,6 @@ def backup_mariadb(mariadbdump_bin, mariadb_root_password, dst_folder):
             logging.error("returncode of cmd mysqldump is none zero")
     except subprocess.CalledProcessError:
         logging.error("returncode of cmd mysqldump is none zero")
-    except:
-        logging.error("unknown exception running subprocess with mysqldump")
 
 
 def clear_backups(save_backups_to, days_to_save_backups):
