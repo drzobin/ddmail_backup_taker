@@ -1,3 +1,4 @@
+"""Take backups of folders/files and mariadb databases."""
 import configparser
 import os
 import subprocess
@@ -11,7 +12,6 @@ import hashlib
 import requests
 import platform
 import gnupg
-
 
 # Configure logging.
 logging.basicConfig(
