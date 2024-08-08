@@ -310,3 +310,33 @@ def test_clear_backups_test3():
 
     if os.path.exists(folder):
         shutil.rmtree(folder)
+
+def test_clear_backups_test4():
+    """Test clear_backups() folder with 3 *.zip files without deleting anything"""
+    
+    folder = "/tmp/test_clear_backups_test4"
+    days_to_save_backups = 7
+
+    if os.path.exists(folder):
+        shutil.rmtree(folder)
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+
+    test_file1 = folder + "/backup.dev1.2024-08-01.zip"
+    test_file2 = folder + "/backup.dev1.2024-08-02.zip"
+    test_file3 = folder + "/backup.dev1.2024-08-03.zip"
+
+    shutil.copyfile(TESTFILE_PATH, test_file1)
+    time.sleep(1)
+    shutil.copyfile(TESTFILE_PATH, test_file2)
+    time.sleep(1)
+    shutil.copyfile(TESTFILE_PATH, test_file3)
+
+    clear_backups(folder, days_to_save_backups)
+
+    assert os.path.exists(test_file1) is True
+    assert os.path.exists(test_file2) is True
+    assert os.path.exists(test_file3) is True
+
+    if os.path.exists(folder):
+        shutil.rmtree(folder)
