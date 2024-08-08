@@ -16,7 +16,7 @@ import gnupg
 # Configure logging.
 logging.basicConfig(
         filename="/var/log/ddmail_backup_taker.log",
-        format='%(asctime)s: %(levelname)s: %(message)s',
+        format='%(asctime)s %(funcName)s %(levelname)s: %(message)s',
         level=logging.INFO
         )
 
