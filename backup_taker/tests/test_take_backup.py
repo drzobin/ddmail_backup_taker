@@ -1,5 +1,5 @@
 """Test for take_bacup module."""
-from backup_taker.take_backup import sha256_of_file, backup_folders
+from backup_taker.take_backup import sha256_of_file, backup_folders, backup_mariadb
 import os
 import shutil
 
@@ -187,3 +187,52 @@ def test_backup_folders_test5():
 
     if os.path.exists(dst_test_folder):
         shutil.rmtree(dst_test_folder)
+
+def test_backup_mariadb_test1():
+    """Test backup_mariadb() with mariadbdump binary location that do not exist."""
+
+    mariadbdump_bin = "/usr/local/donotexist" 
+    mariadb_root_password = "1superGoodpasswordthatiswrong"
+    dst_test_folder = "/tmp/mariadbdump"
+
+    # Create empty dst_test_folder.
+    if os.path.exists(dst_test_folder):
+        shutil.rmtree(dst_test_folder)
+    if not os.path.exists(dst_test_folder):
+        os.makedirs(dst_test_folder)
+
+    worked = backup_mariadb(mariadbdump_bin, mariadb_root_password, dst_test_folder)
+
+    assert worked is False
+
+def test_backup_mariadb_test2():
+    """Test backup_mariadb() with wrong db root password."""
+
+    mariadbdump_bin = "/usr/bin/mariadb-dump" 
+    mariadb_root_password = "1superGoodpasswordthatiswrong"
+    dst_test_folder = "/tmp/mariadbdump"
+
+    # Create empty dst_test_folder.
+    if os.path.exists(dst_test_folder):
+        shutil.rmtree(dst_test_folder)
+    if not os.path.exists(dst_test_folder):
+        os.makedirs(dst_test_folder)
+
+    worked = backup_mariadb(mariadbdump_bin, mariadb_root_password, dst_test_folder)
+
+    assert worked is False
+
+def test_backup_mariadb_test3():
+    """Test backup_mariadb() with dst_folder that do not exist."""
+
+    mariadbdump_bin = "/usr/bin/mariadb-dump" 
+    mariadb_root_password = "1superGoodpasswordthatiswrong"
+    dst_test_folder = "/tmp/mariadbdump"
+
+    # Create empty dst_test_folder.
+    if os.path.exists(dst_test_folder):
+        shutil.rmtree(dst_test_folder)
+
+    worked = backup_mariadb(mariadbdump_bin, mariadb_root_password, dst_test_folder)
+
+    assert worked is False
