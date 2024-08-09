@@ -184,6 +184,11 @@ def gpg_encrypt(pubkey_fingerprint, src_file, src_filename, dst_folder):
     src_filename -- filename of file that should be encrypted.
     dst_folder -- full path to folder to save encrypted file in.
     """
+    #
+    if not os.path.exists(src_file):
+        logging.error("can not find folder where backups are saved")
+        return False
+
     gpg = gnupg.GPG()
     gpg.encoding = 'utf-8'
 
