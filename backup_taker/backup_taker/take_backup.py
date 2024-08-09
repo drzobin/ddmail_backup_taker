@@ -234,13 +234,21 @@ def send_to_backup_receiver(backup_path, filename, url, password):
             }
 
     # Send backup to backup_receiver
-    r = requests.post(url, files=files, data=data, timeout=10)
+    try:
+        r = requests.post(url, files=files, data=data, timeout=10)
 
-    # Log result.
-    if str(r.status_code) == "200" and r.text == "done":
-        logging.info("successfully sent backup to backup_receiver")
-    else:
-        logging.error("failed to sent backup to backup_receiver")
+        # Log result.
+        if str(r.status_code) == "200" and r.text == "done":
+            logging.info("successfully sent backup to backup_receiver")
+        else:
+            logging.error("failed to sent backup to backup_receiver " +
+                          "got http status code: " + str(r.status_code) +
+                          " and message: " + r.text
+                          )
+    except requests.ConnectionError:
+        logging.error("failed to sent backup to backup_receiver" +
+                      " request exception ConncetionError"
+                      )
 
 
 if __name__ == "__main__":
