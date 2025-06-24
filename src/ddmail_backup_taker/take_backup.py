@@ -13,7 +13,7 @@ import platform
 import gnupg
 
 
-def backup_folders(tar_bin, folders_to_backup, dst_folder):
+def backup_folders(logger, tar_bin, folders_to_backup, dst_folder):
     """Tar folders and save the compressed tar files on disc.
 
     Keyword arguments:
@@ -23,12 +23,12 @@ def backup_folders(tar_bin, folders_to_backup, dst_folder):
     """
     # Check if tar binary exist.
     if not os.path.exists(tar_bin):
-        logging.error("tar binary location is wrong")
+        logger.error("tar binary location is wrong")
         return False
 
     # Check if dst_foler exist.
     if not os.path.exists(dst_folder):
-        logging.error("dst_folder do not exist")
+        logger.error("dst_folder do not exist")
         return False
 
     # Take backup of folders in folders_to_backup.
@@ -36,7 +36,7 @@ def backup_folders(tar_bin, folders_to_backup, dst_folder):
 
         # Check if folder exist.
         if not os.path.exists(folder):
-            logging.error("folder do not exist")
+            logger.error("folder do not exist")
             return False
 
         # Create tar archive name.
@@ -53,16 +53,16 @@ def backup_folders(tar_bin, folders_to_backup, dst_folder):
                     stderr=subprocess.DEVNULL
                     )
             if output.returncode != 0:
-                logging.error("returncode of cmd tar is non zero")
+                logger.error("returncode of cmd tar is non zero")
         except subprocess.CalledProcessError:
-            logging.error("returncode of cmd tar is non zero")
+            logger.error("returncode of cmd tar is non zero")
             return False
 
     # All worked as expected.
     return True
 
 
-def backup_mariadb(mariadbdump_bin, mariadb_root_password, dst_folder):
+def backup_mariadb(logger, mariadbdump_bin, mariadb_root_password, dst_folder):
     """Take a full dump of all databases in mariadb included with schema.
 
     Keyword arguments:
@@ -72,12 +72,12 @@ def backup_mariadb(mariadbdump_bin, mariadb_root_password, dst_folder):
     """
     # Check if mariadbdump binary exist.
     if not os.path.exists(mariadbdump_bin):
-        logging.error("mariadbdump binary location is wrong")
+        logger.error("mariadbdump binary location is wrong")
         return False
 
     # Check if dst_folder exist.
     if not os.path.exists(dst_folder):
-        logging.error("dst_folder do not exist")
+        logger.error("dst_folder do not exist")
         return False
 
     # Take backup of mariadb all databases.
@@ -94,17 +94,17 @@ def backup_mariadb(mariadbdump_bin, mariadb_root_password, dst_folder):
                 stdout=f
                 )
         if output.returncode != 0:
-            logging.error("returncode of cmd mysqldump is none zero")
+            logger.error("returncode of cmd mysqldump is none zero")
             return False
     except subprocess.CalledProcessError:
-        logging.error("returncode of cmd mysqldump is none zero")
+        logger.error("returncode of cmd mysqldump is none zero")
         return False
 
     # All worked as expected.
     return True
 
 
-def clear_backups(save_backups_to, days_to_save_backups):
+def clear_backups(logger, save_backups_to, days_to_save_backups):
     """Clear/remove old backups/files that is older then x amount of days.
 
     Keyword arguments:
@@ -113,7 +113,7 @@ def clear_backups(save_backups_to, days_to_save_backups):
     """
     # Check if save_backups_to is a folder.
     if not os.path.exists(save_backups_to):
-        logging.error("can not find folder where backups are saved")
+        logger.error("can not find folder where backups are saved")
 
     # Get list of zip files in the given directory.
     list_of_files = filter(
@@ -126,7 +126,7 @@ def clear_backups(save_backups_to, days_to_save_backups):
 
     # If we have less or equal of 7 backups then exit.
     if len(list_of_files) <= days_to_save_backups:
-        logging.info("too few backups for clearing old backups")
+        logger.info("too few backups for clearing old backups")
         return
 
     list_of_files.reverse()
@@ -139,10 +139,10 @@ def clear_backups(save_backups_to, days_to_save_backups):
             continue
         else:
             os.remove(file)
-            logging.info("removing: " + save_backups_to + "/" + file)
+            logger.info("removing: " + save_backups_to + "/" + file)
 
 
-def sha256_of_file(file):
+def sha256_of_file(logger, file):
     """Take sha256 checksum of file on disc.
 
     Keyword arguments:
@@ -167,7 +167,7 @@ def sha256_of_file(file):
     return sha256.hexdigest()
 
 
-def gpg_encrypt(pubkey_fingerprint, src_file, src_filename, dst_folder):
+def gpg_encrypt(logger, pubkey_fingerprint, src_file, src_filename, dst_folder):
     """Encrypt file with gpg using a public key in the current users keyring.
 
     Keyword arguments:
@@ -178,7 +178,7 @@ def gpg_encrypt(pubkey_fingerprint, src_file, src_filename, dst_folder):
     """
     #
     if not os.path.exists(src_file):
-        logging.error("can not find folder where backups are saved")
+        logger.error("can not find folder where backups are saved")
         return False
 
     gpg = gnupg.GPG()
@@ -194,7 +194,7 @@ def gpg_encrypt(pubkey_fingerprint, src_file, src_filename, dst_folder):
 
     # Encryption has failed.
     if encrypted_data.ok is not True:
-        logging.error("encryption failed with " + str(encrypted_data.status))
+        logger.error("encryption failed with " + str(encrypted_data.status))
         return False
 
     encrypted_file = dst_folder + "/" + src_filename + ".gpg"
@@ -202,7 +202,7 @@ def gpg_encrypt(pubkey_fingerprint, src_file, src_filename, dst_folder):
     with open(encrypted_file, "wb") as file:
         file.write(encrypted_data.data)
 
-    logging.info("successfully encrypted backup")
+    logger.info("successfully encrypted backup")
     return True
 
 
@@ -231,13 +231,13 @@ def send_to_backup_receiver(backup_path, filename, url, password):
 
         # Log result.
         if str(r.status_code) == "200" and r.text == "done":
-            logging.info("successfully sent backup to backup_receiver")
+            logger.info("successfully sent backup to backup_receiver")
         else:
-            logging.error("failed to sent backup to backup_receiver " +
+            logger.error("failed to sent backup to backup_receiver " +
                           "got http status code: " + str(r.status_code) +
                           " and message: " + r.text
                           )
     except requests.ConnectionError:
-        logging.error("failed to sent backup to backup_receiver" +
+        logger.error("failed to sent backup to backup_receiver" +
                       " request exception ConncetionError"
                       )
