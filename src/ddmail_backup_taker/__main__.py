@@ -77,7 +77,7 @@ def main():
     # Mariadb root password.
     mariadb_root_password = toml_config["MARIADB"]["ROOT_PASSWORD"]
 
-    # Number of days to save backups.
+    # Number of days to save backups local.
     days_to_save_backups = int(toml_config["BACKUPS_TO_SAVE_LOCAL"])
 
     # Create tmp folder.
