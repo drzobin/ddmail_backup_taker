@@ -1,6 +1,5 @@
 SAVE_BACKUPS_TO = '/root/backups'
 TMP_FOLDER = '/root/backups/tmp'
-FOLDERS_TO_BACKUP = '/var/mail /var/lib/rspamd/dkim/'
 TAR_BIN = '/usr/bin/tar'
 BACKUPS_TO_SAVE_LOCAL = 7
 
@@ -12,6 +11,10 @@ LOGFILE = '/var/log/ddmail_backup_taker.log'
 LOG_TO_SYSLOG = true
 SYSLOG_SERVER = '/dev/log'
 
+[FOLDERS]
+use = true
+FOLDERS_TO_BACKUP = '/var/mail /var/lib/rspamd/dkim/'
+
 [MARIADB]
 USE = true
 MARIADBDUMP_BIN = '/usr/bin/mariadb-dump'
@@ -22,7 +25,7 @@ ROOT_PASSWORD = 'change_me'
 USE = true
 PUBKEY_FINGERPRINT = 'change_me'
 
-[BACKYP_RECEIVER]
+[BACKUP_RECEIVER]
 USE = true
 URL = 'https://change_me:change_me/receive_backup'
 PASSWORD = 'change_me'
