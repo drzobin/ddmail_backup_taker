@@ -1,5 +1,0 @@
-pytest
-coverage
-requests
-python-gnupg
-flake8
