@@ -1,25 +1,29 @@
-[DEFAULT]
-save_backups_to = /root/backups
-tmp_folder = /root/backups/tmp
-folders_to_backup = /var/mail /var/lib/rspamd/dkim
-tar_bin = /usr/bin/tar
-mariadbdump_bin = /usr/bin/mariadb-dump
-days_to_save_backups = 7
+SAVE_BACKUPS_TO = '/root/backups'
+TMP_FOLDER = '/root/backups/tmp'
+FOLDERS_TO_BACKUP = '/var/mail /var/lib/rspamd/dkim/'
+TAR_BIN = '/usr/bin/tar'
+BACKUPS_TO_SAVE_LOCAL = 7
 
-[logging]
-logfile = /var/log/ddmail_backup_taker.log
+[LOGGING]
+LOGLEVEL = 'INFO'
+LOG_TO_CONSOLE = true
+LOG_TO_FILE = true
+LOGFILE = '/var/log/ddmail_backup_taker.log'
+LOG_TO_SYSLOG = true
+SYSLOG_SERVER = '/dev/log'
 
-[mariadb]
-use = Yes
-databases = all
-root_password = change_me
+[MARIADB]
+USE = true
+MARIADBDUMP_BIN = '/usr/bin/mariadb-dump'
+DATABASES = 'all'
+ROOT_PASSWORD = 'change_me'
 
-[gpg_encryption]
-use = Yes
-pubkey_fingerprint = change_me
+[GPG_ENCRYPTION]
+USE = true
+PUBKEY_FINGERPRINT = 'change_me'
 
+[BACKYP_RECEIVER]
+USE = true
+URL = 'https://change_me:change_me/receive_backup'
+PASSWORD = 'change_me'
 
-[backup_receiver]
-use = Yes
-url = change_me
-password = change_me
