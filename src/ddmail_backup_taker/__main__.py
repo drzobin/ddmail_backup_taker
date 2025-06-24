@@ -95,14 +95,15 @@ def main():
     tmp_folder_date = tmp_folder + "/" + today
 
     # Take backup of folders.
-    worked = backup_folders(tar_bin, folders_to_backup, tmp_folder_date)
+    if toml_config["FOLDERS"]["USE"] == True:
+        worked = backup_folders(tar_bin, folders_to_backup, tmp_folder_date)
 
-    # Check if backup_folders succeded.
-    if worked is True:
-        logger.info("backup_folders finished succesfully")
-    else:
-        logger.error("backup_folders failed")
-        sys.exit(1)
+        # Check if backup_folders succeded.
+        if worked is True:
+            logger.info("backup_folders finished succesfully")
+        else:
+            logger.error("backup_folders failed")
+            sys.exit(1)
 
     # Take backup of mariadb all databases.
     if toml_config["MARIADB"]["USE"] == True:
