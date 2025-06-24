@@ -1,0 +1,49 @@
+[project]
+name = "ddmail_backup_taker"
+version = "0.0.1"
+authors = [{ name = "Robin Larsson", email = "me@drz.se" }]
+description = "Program to take backups for the DDMail project."
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: POSIX :: Linux",
+]
+dependencies = [
+    "toml",
+    "requests",
+    "python-gnupg",
+]
+license = "AGPL-3.0"
+license-files = ["LICEN[CS]E*"]
+
+[project.optional-dependencies]
+dev = [
+    "toml",
+    "requests",
+    "python-gnupg",
+    "pytest",
+    "pytest-cov",
+    "flake8",
+    "hatchling",
+    "twine",
+]
+test = [
+    "toml",
+    "requests",
+    "python-gnupg",
+    "pytest",
+    "pytest-cov",
+    "flake8",
+]
+
+[project.scripts]
+ddmail_openpgp_encryptor = "ddmail_backup_taker.__main__:main"
+
+[project.urls]
+Homepage = "https://github.com/drzobin/ddmail_backup_taker"
+Issues = "https://github.com/drzobin/ddmail_backup_taker/issues"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
