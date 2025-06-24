@@ -96,7 +96,7 @@ def main():
 
     # Take backup of folders.
     if toml_config["FOLDERS"]["USE"] == True:
-        worked = backup_folders(tar_bin, folders_to_backup, tmp_folder_date)
+        worked = backup_folders(logger, tar_bin, folders_to_backup, tmp_folder_date)
 
         # Check if backup_folders succeded.
         if worked is True:
@@ -107,7 +107,7 @@ def main():
 
     # Take backup of mariadb all databases.
     if toml_config["MARIADB"]["USE"] == True:
-        backup_mariadb(mariadbdump_bin, mariadb_root_password, tmp_folder_date)
+        backup_mariadb(logger, mariadbdump_bin, mariadb_root_password, tmp_folder_date)
 
     # Compress all files with zip.
     hostname = platform.uname().node
@@ -130,6 +130,7 @@ def main():
         pubkey_fingerprint = toml_config["GPG_ENCRYPTION"]["PUBKEY_FINGERPRINT"]
 
         status = gpg_encrypt(
+                logger,
                 pubkey_fingerprint,
                 backup_path,
                 backup_filename,
@@ -153,10 +154,10 @@ def main():
         url = toml_config["BACKUP_RECEIVER"]["URL"]
         password = toml_config["BACKUP_RECEIVER"]["PASSWORD"]
 
-        send_to_backup_receiver(backup_path, backup_filename, url, password)
+        send_to_backup_receiver(logger, backup_path, backup_filename, url, password)
 
     # Remove old backups.
-    clear_backups(save_backups_to, days_to_save_backups)
+    clear_backups(logger, save_backups_to, days_to_save_backups)
     logger.info("backup job finished succesfully")
 
 if __name__ == "__main__":
