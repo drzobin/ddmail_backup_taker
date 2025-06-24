@@ -12,7 +12,7 @@ LOG_TO_SYSLOG = true
 SYSLOG_SERVER = '/dev/log'
 
 [FOLDERS]
-use = true
+USE = true
 FOLDERS_TO_BACKUP = '/var/mail /var/lib/rspamd/dkim/'
 
 [MARIADB]
