@@ -1,4 +1,3 @@
-"""Take backups of folders/files and mariadb databases."""
 import configparser
 import os
 import subprocess
@@ -12,13 +11,6 @@ import hashlib
 import requests
 import platform
 import gnupg
-
-# Configure logging.
-logging.basicConfig(
-        filename="/var/log/ddmail_backup_taker.log",
-        format='%(asctime)s %(funcName)s %(levelname)s: %(message)s',
-        level=logging.INFO
-        )
 
 
 def backup_folders(tar_bin, folders_to_backup, dst_folder):
@@ -249,129 +241,3 @@ def send_to_backup_receiver(backup_path, filename, url, password):
         logging.error("failed to sent backup to backup_receiver" +
                       " request exception ConncetionError"
                       )
-
-
-if __name__ == "__main__":
-    """Main function """
-
-    logging.info("starting backup job")
-
-    # Get arguments from args.
-    parser = argparse.ArgumentParser(description="Backup for ddmail")
-    parser.add_argument(
-            '--config-file',
-            type=str,
-            help='Full path to config file.',
-            required=True
-            )
-
-    args = parser.parse_args()
-
-    # Check that config file exsist and is a file.
-    if os.path.isfile(args.config_file) is False:
-        print("config file do not exist or is not a file.")
-        sys.exit(1)
-
-    # Import config file.
-    config = configparser.ConfigParser()
-    conf_file = args.config_file
-    config.read(conf_file)
-
-    # Working folder.
-    tmp_folder = config["DEFAULT"]["tmp_folder"]
-
-    # Backups will be saved to this folder.
-    save_backups_to = config["DEFAULT"]["save_backups_to"]
-
-    # The folder to take backups on.
-    folders_to_backup = str.split(config["DEFAULT"]["folders_to_backup"])
-
-    # Tar binary location.
-    tar_bin = config["DEFAULT"]["tar_bin"]
-
-    # Mariadb-dump binary location.
-    mariadbdump_bin = config["DEFAULT"]["mariadbdump_bin"]
-
-    # Mariadb root password.
-    mariadb_root_password = config["mariadb"]["root_password"]
-
-    # Number of days to save backups.
-    days_to_save_backups = int(config["DEFAULT"]["days_to_save_backups"])
-
-    # Create tmp folder.
-    if not os.path.exists(tmp_folder):
-        os.makedirs(tmp_folder)
-
-    # Create folder to save backups to.
-    if not os.path.exists(save_backups_to):
-        os.makedirs(save_backups_to)
-
-    # Create tmp folder for todays date.
-    today = str(datetime.date.today())
-    if not os.path.exists(tmp_folder + "/" + today):
-        os.makedirs(tmp_folder + "/" + today)
-    tmp_folder_date = tmp_folder + "/" + today
-
-    # Take backup of folders.
-    worked = backup_folders(tar_bin, folders_to_backup, tmp_folder_date)
-
-    # Check if backup_folders succeded.
-    if worked is True:
-        logging.info("backup_folders finished succesfully")
-    else:
-        logging.error("backup_folders failed")
-        sys.exit(1)
-
-    # Take backup of mariadb all databases.
-    if config["mariadb"]["use"] == "Yes":
-        backup_mariadb(mariadbdump_bin, mariadb_root_password, tmp_folder_date)
-
-    # Compress all files with zip.
-    hostname = platform.uname().node
-    backup_filename = "backup." + hostname + "." + today + ".zip"
-    backup_path = save_backups_to + "/" + backup_filename
-    shutil.make_archive(
-            backup_path.replace(".zip", ""),
-            'zip',
-            tmp_folder_date
-            )
-
-    # Change premissions on backup file.
-    os.chmod(backup_path, 0o640)
-
-    # Remove content in tmp folder.
-    shutil.rmtree(tmp_folder_date)
-
-    # Encrypt backup with openPGP public key.
-    if config["gpg_encryption"]["use"] == "Yes":
-        pubkey_fingerprint = config["gpg_encryption"]["pubkey_fingerprint"]
-
-        status = gpg_encrypt(
-                pubkey_fingerprint,
-                backup_path,
-                backup_filename,
-                save_backups_to
-                )
-
-        # If encryption fails program will exit with 1.
-        if status is not True:
-            logging.error("gpg encryption failed")
-            sys.exit(1)
-
-        # Remove unencrypted backup.
-        os.remove(backup_path)
-
-        # Set names and path to match the encryptes backup file.
-        backup_filename = backup_filename + ".gpg"
-        backup_path = save_backups_to + "/" + backup_filename
-
-    # Send backups to backup_receiver.
-    if config["backup_receiver"]["use"] == "Yes":
-        url = config["backup_receiver"]["url"]
-        password = config["backup_receiver"]["password"]
-
-        send_to_backup_receiver(backup_path, backup_filename, url, password)
-
-    # Remove old backups.
-    clear_backups(save_backups_to, days_to_save_backups)
-    logging.info("backup job finished succesfully")
