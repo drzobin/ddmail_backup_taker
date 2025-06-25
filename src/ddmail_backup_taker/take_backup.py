@@ -13,6 +13,20 @@ import platform
 import gnupg
 
 def create_backup(logger:logging.Logger, toml_config:dict) -> dict:
+    """Create a complete backup according to the provided configuration.
+
+    This function orchestrates the backup process, creating necessary directories,
+    backing up MariaDB databases if configured, and compressing specified folders
+    into a backup archive with optional encryption.
+
+    Args:
+        logger (logging.Logger): Logger object for recording operations.
+        toml_config (dict): Configuration dictionary with all backup settings.
+
+    Returns:
+        dict: Result containing status information:
+            {"is_working": bool, "msg": str}
+    """
     # Working folder.
     tmp_folder = toml_config["TMP_FOLDER"]
 
@@ -76,12 +90,19 @@ def create_backup(logger:logging.Logger, toml_config:dict) -> dict:
     return {"is_working": True, "msg": msg}
 
 def tar_data(logger:logging.Logger, toml_config:dict, data_to_backup:list[str])->dict:
-    """Tar data and save the compressed tar file on disc.
+    """Create a compressed archive of backup data.
 
-    Keyword arguments:
-    logger -- logger object.
-    toml_config -- toml config dict.
-    data_to_backup -- list of folders to backup.
+    This function compresses the specified folders and files into a tar.gz archive,
+    with optional GPG encryption if configured in the settings.
+
+    Args:
+        logger (logging.Logger): Logger object for recording operations.
+        toml_config (dict): Configuration dictionary with backup settings.
+        data_to_backup (list[str]): List of files and folders to include in the backup.
+
+    Returns:
+        dict: Result containing status information and file path:
+            {"is_working": bool, "msg": str, "backup_file": str, "backup_filename": str (if successful)}
     """
 
     tar_bin = toml_config["TAR_BIN"]
@@ -174,13 +195,20 @@ def tar_data(logger:logging.Logger, toml_config:dict, data_to_backup:list[str])-
     return {"is_working": True, "msg": msg,"backup_file": backup_file, "backup_filename": backup_filename}
 
 def backup_mariadb(logger: logging.Logger, mariadbdump_bin: str, mariadb_root_password: str, dst_folder: str) -> dict:
-    """Take a full dump of all databases in mariadb included with schema.
+    """Create a full dump of all MariaDB databases with schema.
 
-    Keyword arguments:
-    logger -- logger object.
-    mariadbdump_bin -- full location of the mariadbdump binary.
-    mariadb_root_password -- mariadb password for user root.
-    dst_folder -- save the database dumpt to this folder.
+    This function executes the mariadbdump binary to create a complete backup
+    of all databases in the MariaDB instance, including schema definitions.
+
+    Args:
+        logger (logging.Logger): Logger object for recording operations.
+        mariadbdump_bin (str): Full path to the mariadbdump binary.
+        mariadb_root_password (str): Password for the MariaDB root user.
+        dst_folder (str): Directory where the database dump will be saved.
+
+    Returns:
+        dict: Result containing status information and file path:
+            {"is_working": bool, "msg": str, "db_dump_file": str (if successful)}
     """
     # Check if mariadbdump binary exist.
     if not os.path.exists(mariadbdump_bin):
@@ -229,11 +257,19 @@ def backup_mariadb(logger: logging.Logger, mariadbdump_bin: str, mariadb_root_pa
 
 
 def clear_backups(logger:logging.Logger, save_backups_to:str, days_to_save_backups:int) -> dict:
-    """Clear/remove old backups/files that is older then x amount of days.
+    """Remove backup files older than the specified retention period.
 
-    Keyword arguments:
-    save_backups_to -- folder where backups is stored that will be removed.
-    days_to_save_backups -- number of days before backups are removed.
+    This function identifies and deletes backup files that exceed the specified
+    age threshold, keeping only the most recent backups as defined by the retention policy.
+
+    Args:
+        logger (logging.Logger): Logger object for recording operations.
+        save_backups_to (str): Directory containing backup files to manage.
+        days_to_save_backups (int): Number of days worth of backups to retain.
+
+    Returns:
+        dict: Result containing status information:
+            {"is_working": bool, "msg": str}
     """
     # Check if save_backups_to is a folder.
     if not os.path.exists(save_backups_to):
@@ -274,10 +310,18 @@ def clear_backups(logger:logging.Logger, save_backups_to:str, days_to_save_backu
 
 
 def sha256_of_file(logger:logging.Logger, file:str) -> dict:
-    """Take sha256 checksum of file on disc.
+    """Calculate the SHA256 checksum of a file.
 
-    Keyword arguments:
-    file -- full path to file that we should take the sha256 checksum of.
+    This function reads a file in chunks and calculates its SHA256 hash,
+    which can be used to verify file integrity.
+
+    Args:
+        logger (logging.Logger): Logger object for recording operations.
+        file (str): Path to the file to calculate checksum for.
+
+    Returns:
+        dict: Result containing status information and checksum:
+            {"is_working": bool, "msg": str, "checksum": str (if successful)}
     """
     # 65kb
     buf_size = 65536
@@ -303,13 +347,21 @@ def sha256_of_file(logger:logging.Logger, file:str) -> dict:
     return {"is_working": True, "msg": msg, "checksum": checksum}
 
 def send_to_backup_receiver(logger:logging.Logger, backup_path:str, filename:str, url:str, password:str) -> dict:
-    """Send backups to remote ddmail_backup_receiver for offsite storage.
+    """Upload backup files to a remote backup receiver service.
 
-    Keyword arguments:
-    backup_path -- full location of file to send.
-    filename -- filename of file to send.
-    url -- url to ddmail_backup_receiver.
-    password -- password to ddmail_backup_receiver.
+    This function calculates the SHA256 checksum of the backup file and sends both
+    the file and its checksum to a remote backup receiver endpoint for offsite storage.
+
+    Args:
+        logger (logging.Logger): Logger object for recording operations.
+        backup_path (str): Full path to the backup file to upload.
+        filename (str): Name of the file as it will be stored on the receiver.
+        url (str): URL endpoint of the backup receiver service.
+        password (str): Authentication password for the backup receiver service.
+
+    Returns:
+        dict: Result containing status information:
+            {"is_working": bool, "msg": str}
     """
     # Get the sha256 checksum of file.
     sha256_result = sha256_of_file(logger, backup_path)
