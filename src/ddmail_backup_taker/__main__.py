@@ -6,7 +6,8 @@ import toml
 import datetime
 import platform
 import shutil
-from ddmail_backup_taker.take_backup import backup_folders, backup_mariadb, gpg_encrypt, clear_backups
+import sys
+from ddmail_backup_taker.take_backup import create_backup, send_to_backup_receiver, clear_backups
 
 def main():
     # Get arguments from args.
@@ -59,105 +60,24 @@ def main():
 
     logger.info("starting backup job")
 
-    # Working folder.
-    tmp_folder = toml_config["TMP_FOLDER"]
+    # Create backup file.
+    result_create_backup = create_backup(logger, toml_config)
+    if not result_create_backup["is_working"]:
+        logger.error("create_backup failed: " + result_create_backup["msg"])
 
-    # Backups will be saved to this folder.
-    save_backups_to = toml_config["SAVE_BACKUPS_TO"]
-
-    # The folder to take backups on.
-    folders_to_backup = str.split(toml_config["FOLDERS"]["FOLDERS_TO_BACKUP"])
-
-    # Tar binary location.
-    tar_bin = toml_config["TAR_BIN"]
-
-    # Mariadb-dump binary location.
-    mariadbdump_bin = toml_config["MARIADB"]["MARIADBDUMP_BIN"]
-
-    # Mariadb root password.
-    mariadb_root_password = toml_config["MARIADB"]["ROOT_PASSWORD"]
-
-    # Number of days to save backups local.
-    days_to_save_backups = int(toml_config["BACKUPS_TO_SAVE_LOCAL"])
-
-    # Create tmp folder.
-    if not os.path.exists(tmp_folder):
-        os.makedirs(tmp_folder)
-
-    # Create folder to save backups to.
-    if not os.path.exists(save_backups_to):
-        os.makedirs(save_backups_to)
-
-    # Create tmp folder for todays date.
-    today = str(datetime.date.today())
-    if not os.path.exists(tmp_folder + "/" + today):
-        os.makedirs(tmp_folder + "/" + today)
-    tmp_folder_date = tmp_folder + "/" + today
-
-    # Take backup of folders.
-    if toml_config["FOLDERS"]["USE"] == True:
-        worked = backup_folders(logger, tar_bin, folders_to_backup, tmp_folder_date)
-
-        # Check if backup_folders succeded.
-        if worked is True:
-            logger.info("backup_folders finished succesfully")
-        else:
-            logger.error("backup_folders failed")
-            sys.exit(1)
-
-    # Take backup of mariadb all databases.
-    if toml_config["MARIADB"]["USE"] == True:
-        backup_mariadb(logger, mariadbdump_bin, mariadb_root_password, tmp_folder_date)
-
-    # Compress all files with zip.
-    hostname = platform.uname().node
-    backup_filename = "backup." + hostname + "." + today + ".zip"
-    backup_path = save_backups_to + "/" + backup_filename
-    shutil.make_archive(
-            backup_path.replace(".zip", ""),
-            'zip',
-            tmp_folder_date
-            )
-
-    # Change premissions on backup file.
-    os.chmod(backup_path, 0o640)
-
-    # Remove content in tmp folder.
-    shutil.rmtree(tmp_folder_date)
-
-    # Encrypt backup with openPGP public key.
-    if toml_config["GPG_ENCRYPTION"]["USE"] == True:
-        pubkey_fingerprint = toml_config["GPG_ENCRYPTION"]["PUBKEY_FINGERPRINT"]
-
-        status = gpg_encrypt(
-                logger,
-                pubkey_fingerprint,
-                backup_path,
-                backup_filename,
-                save_backups_to
-                )
-
-        # If encryption fails program will exit with 1.
-        if status is not True:
-            logging.error("gpg encryption failed")
-            sys.exit(1)
-
-        # Remove unencrypted backup.
-        os.remove(backup_path)
-
-        # Set names and path to match the encryptes backup file.
-        backup_filename = backup_filename + ".gpg"
-        backup_path = save_backups_to + "/" + backup_filename
-
-    # Send backups to backup_receiver.
+    # Send backup to ddmail_backup_receiver.
     if toml_config["BACKUP_RECEIVER"]["USE"] == True:
         url = toml_config["BACKUP_RECEIVER"]["URL"]
         password = toml_config["BACKUP_RECEIVER"]["PASSWORD"]
 
-        send_to_backup_receiver(logger, backup_path, backup_filename, url, password)
+        result_send_to_backup_receiver = send_to_backup_receiver(logger, result_create_backup["backup_file"], result_create_backup["backup_filename"], url, password)
+        if not result_send_to_backup_receiver["is_working"]:
+            logger.error("send_to_backup_receiver failed: " + result_send_to_backup_receiver["msg"])
+            # Continue execution even if sending to backup receiver fails
 
-    # Remove old backups.
-    clear_backups(logger, save_backups_to, days_to_save_backups)
+    # Clear/remove backups if there is to many.
+    return_clear_backups = clear_backups(logger, toml_config["SAVE_BACKUPS_TO"], toml_config["BACKUPS_TO_SAVE_LOCAL"])
+
     logger.info("backup job finished succesfully")
 
 if __name__ == "__main__":
