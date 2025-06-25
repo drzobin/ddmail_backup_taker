@@ -38,7 +38,7 @@ test = [
 ]
 
 [project.scripts]
-ddmail_openpgp_encryptor = "ddmail_backup_taker.__main__:main"
+ddmail_backup_taker = "ddmail_backup_taker.__main__:main"
 
 [project.urls]
 Homepage = "https://github.com/drzobin/ddmail_backup_taker"
