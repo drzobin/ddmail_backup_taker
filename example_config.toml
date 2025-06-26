@@ -10,17 +10,19 @@ TAR_BIN = '/usr/bin/tar'
 # How many backups should be saved locally.
 BACKUPS_TO_SAVE_LOCAL = 7
 
-[FOLDERS]
-# Set to true if we should take backups of folders else false.
+# Full path to secure-delete binary
+SRM_BIN = '/usr/bin/srm'
+
+[DATA]
+# Set to true if we should take backups of folders and/or files else false.
 USE = true
-# Space separated string containing the folders that should be backed up.
-FOLDERS_TO_BACKUP = '/var/mail /var/lib/rspamd/dkim/'
+# Space separated string containing the folders and/or files that should be backed up.
+DATA_TO_BACKUP = '/var/mail /var/lib/rspamd/dkim/'
 
 [MARIADB]
-# Set to true if we should take backups of mariadb databases else false.
+# Set to true if we should take backups of all mariadb databases else false.
 USE = true
 MARIADBDUMP_BIN = '/usr/bin/mariadb-dump'
-DATABASES = 'all'
 ROOT_PASSWORD = 'change_me'
 
 [GPG_ENCRYPTION]
