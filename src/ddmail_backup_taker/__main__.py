@@ -7,7 +7,8 @@ import datetime
 import platform
 import shutil
 import sys
-from ddmail_backup_taker.take_backup import create_backup, send_to_backup_receiver, clear_backups
+from ddmail_backup_taker.validate_config import check_config
+from ddmail_backup_taker.backup import create_backup, send_to_backup_receiver, clear_backups
 
 def main():
     # Get arguments from args.
@@ -60,23 +61,37 @@ def main():
 
     logger.info("starting backup job")
 
+    # Validate config.
+    logger.debug("running check_config")
+    result_check_config = check_config(logger, toml_config)
+    if not result_check_config["is_working"]:
+        logger.error("check_config failed: " + result_check_config["msg"])
+        sys.exit(1)
+
     # Create backup file.
+    logger.debug("running create_backup")
     result_create_backup = create_backup(logger, toml_config)
     if not result_create_backup["is_working"]:
         logger.error("create_backup failed: " + result_create_backup["msg"])
+        sys.exit(1)
 
-    # Send backup to ddmail_backup_receiver.
+    # Send backup file to ddmail_backup_receiver.
     if toml_config["BACKUP_RECEIVER"]["USE"] == True:
         url = toml_config["BACKUP_RECEIVER"]["URL"]
         password = toml_config["BACKUP_RECEIVER"]["PASSWORD"]
 
-        result_send_to_backup_receiver = send_to_backup_receiver(logger, result_create_backup["backup_file"], result_create_backup["backup_filename"], url, password)
+        logger.debug("running send_to_backup_receiver")
+        result_send_to_backup_receiver = send_to_backup_receiver(logger, toml_config, result_create_backup["backup_file"], result_create_backup["backup_filename"])
         if not result_send_to_backup_receiver["is_working"]:
-            logger.error("send_to_backup_receiver failed: " + result_send_to_backup_receiver["msg"])
-            # Continue execution even if sending to backup receiver fails
+            logger.error("send_to_backup_receiver failed")
+            sys.exit(1)
 
-    # Clear/remove backups if there is to many.
-    return_clear_backups = clear_backups(logger, toml_config["SAVE_BACKUPS_TO"], toml_config["BACKUPS_TO_SAVE_LOCAL"])
+    # Clear/remove backup files if there is to many.
+    logger.debug("running clear_backups")
+    return_clear_backups = clear_backups(logger, toml_config)
+    if not return_clear_backups["is_working"]:
+        logger.error("clear_backups failed: " + return_clear_backups["msg"])
+        sys.exit(1)
 
     logger.info("backup job finished succesfully")
 
