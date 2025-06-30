@@ -1,17 +1,11 @@
-import configparser
 import os
 import subprocess
-import shutil
 import logging
 import datetime
-import sys
-import argparse
 import glob
 import hashlib
 import requests
-import platform
 import gnupg
-import re
 
 def create_backup(logger:logging.Logger, toml_config:dict) -> dict:
     """Create a complete backup according to the provided configuration.
@@ -26,16 +20,21 @@ def create_backup(logger:logging.Logger, toml_config:dict) -> dict:
 
     Returns:
         dict: Result containing status information:
-            {"is_working": bool, "msg": str}
+            {"is_working": bool, "msg": str, "backup_file": str, "backup_filename": str}
+
+    Error Responses:
+        {"is_working": False, "msg": "Failed to backup MariaDB: <error message>"}: If MariaDB backup fails
+        {"is_working": False, "msg": "Failed to backup folders: <error message>"}: If folder backup fails
+        {"is_working": False, "msg": "Failed to secure delete temp folder"}: If temp folder deletion fails
+
+    Success Response:
+        {"is_working": True, "msg": "finished successfully", "backup_file": "<path>", "backup_filename": "<filename>"}
     """
     # Working folder.
     tmp_folder = toml_config["TMP_FOLDER"]
 
     # Backups will be saved to this folder.
     save_backups_to = toml_config["SAVE_BACKUPS_TO"]
-
-    # Tar binary location.
-    tar_bin = toml_config["TAR_BIN"]
 
     # The folder and/or files to take backups on.
     data_to_backup = []
@@ -109,7 +108,17 @@ def tar_data(logger:logging.Logger, toml_config:dict, data_to_backup:list[str])-
 
     Returns:
         dict: Result containing status information and file path:
-            {"is_working": bool, "msg": str, "backup_file": str, "backup_filename": str (if successful)}
+            {"is_working": bool, "msg": str, "backup_file": str, "backup_filename": str}
+
+    Error Responses:
+        {"is_working": False, "msg": "tar binary location is wrong"}: If tar binary doesn't exist
+        {"is_working": False, "msg": "save backups to directory location is wrong"}: If backup directory doesn't exist
+        {"is_working": False, "msg": "tar command failed with return code <code>"}: If tar command fails
+        {"is_working": False, "msg": "gpg command failed with return code <code>"}: If GPG encryption fails
+        {"is_working": False, "msg": "Error during backup process: <error>"}: For other errors
+
+    Success Response:
+        {"is_working": True, "msg": "finished successfully", "backup_file": "<path>", "backup_filename": "<filename>"}
     """
 
     tar_bin = toml_config["TAR_BIN"]
@@ -180,12 +189,17 @@ def tar_data(logger:logging.Logger, toml_config:dict, data_to_backup:list[str])-
         # Create regular tar file without encryption
         try:
             # Create standard tar command
-            result = subprocess.run(
+            tar_process = subprocess.run(
                 [tar_bin, "-czf", backup_file] + data_to_backup,
                 check=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE
             )
+
+            if tar_process.returncode != 0:
+                msg = f"tar command failed with return code {tar_process.returncode}"
+                logger.error(msg)
+                return {"is_working": False, "msg": msg}
 
         except subprocess.CalledProcessError as e:
             msg = f"tar command failed with return code {e.returncode}: {e.stderr.decode('utf-8')}"
@@ -215,7 +229,16 @@ def backup_mariadb(logger: logging.Logger, mariadbdump_bin: str, mariadb_root_pa
 
     Returns:
         dict: Result containing status information and file path:
-            {"is_working": bool, "msg": str, "db_dump_file": str (if successful)}
+            {"is_working": bool, "msg": str, "db_dump_file": str}
+
+    Error Responses:
+        {"is_working": False, "msg": "mariadbdump binary location is wrong"}: If mariadbdump binary doesn't exist
+        {"is_working": False, "msg": "dst_folder do not exist"}: If destination folder doesn't exist
+        {"is_working": False, "msg": "returncode of cmd mariadbdump is none zero"}: If mariadbdump command fails
+        {"is_working": False, "msg": "mariadb database dump file <path> does not exist"}: If dump file wasn't created
+
+    Success Response:
+        {"is_working": True, "msg": "done", "db_dump_file": "<path>"}
     """
     # Check if mariadbdump binary exist.
     if not os.path.exists(mariadbdump_bin):
@@ -267,16 +290,23 @@ def clear_backups(logger:logging.Logger, toml_config:dict) -> dict:
     """Remove backup files older than the specified retention period.
 
     This function identifies and deletes backup files that exceed the specified
-    age threshold, keeping only the most recent backups as defined by the retention policy.
+    retention limit, keeping only the most recent backups as defined by the configuration.
+    It uses secure deletion to remove older backup files.
 
     Args:
         logger (logging.Logger): Logger object for recording operations.
-        save_backups_to (str): Directory containing backup files to manage.
-        days_to_save_backups (int): Number of days worth of backups to retain.
+        toml_config (dict): Configuration dictionary with backup settings.
 
     Returns:
         dict: Result containing status information:
             {"is_working": bool, "msg": str}
+
+    Error Responses:
+        {"is_working": False, "msg": "Failed to delete file <path> with secure-delete"}: If secure deletion fails
+
+    Success Response:
+        {"is_working": True, "msg": "too few backups for clearing old backups"}: If not enough backups to clear
+        {"is_working": True, "msg": "finished successfully"}: If cleaning completed successfully
     """
 
     # Get data from configuration file.
@@ -335,7 +365,13 @@ def sha256_of_file(logger:logging.Logger, file:str) -> dict:
 
     Returns:
         dict: Result containing status information and checksum:
-            {"is_working": bool, "msg": str, "checksum": str (if successful)}
+            {"is_working": bool, "msg": str, "checksum": str}
+
+    Error Responses:
+        {"is_working": False, "msg": "file does not exist", "checksum": None}: If file doesn't exist
+
+    Success Response:
+        {"is_working": True, "msg": "generated SHA256 checksum of file <path> got sha256 checksum <checksum> successfully", "checksum": "<checksum>"}
     """
     # 65kb
     buf_size = 65536
@@ -344,7 +380,7 @@ def sha256_of_file(logger:logging.Logger, file:str) -> dict:
 
     # Check if file exist.
     if os.path.exists(file) is not True:
-        msg = "File does not exist"
+        msg = "file does not exist"
         logger.error(msg)
         return {"is_working": False, "msg": msg, "checksum": None}
 
@@ -368,14 +404,21 @@ def send_to_backup_receiver(logger:logging.Logger,toml_config:dict, backup_path:
 
     Args:
         logger (logging.Logger): Logger object for recording operations.
+        toml_config (dict): Configuration dictionary with backup settings.
         backup_path (str): Full path to the backup file to upload.
         filename (str): Name of the file as it will be stored on the receiver.
-        url (str): URL endpoint of the backup receiver service.
-        password (str): Authentication password for the backup receiver service.
 
     Returns:
         dict: Result containing status information:
             {"is_working": bool, "msg": str}
+
+    Error Responses:
+        {"is_working": False, "msg": "failed to calculate SHA256 checksum: <error message>"}: If checksum calculation fails
+        {"is_working": False, "msg": "failed to sent backup to backup_receiver got http status code: <code> and message: <msg>"}: If HTTP request fails
+        {"is_working": False, "msg": "failed to sent backup to backup_receiver request exception ConnectionError"}: If connection error occurs
+
+    Success Response:
+        {"is_working": True, "msg": "successfully sent backup to backup_receiver"}
     """
 
     # Get data from configuration file.
@@ -423,11 +466,29 @@ def send_to_backup_receiver(logger:logging.Logger,toml_config:dict, backup_path:
         return {"is_working": False, "msg": msg}
 
 def secure_delete(logger: logging.Logger, toml_config: dict,data: str) -> dict:
-    """ Use secure-delete binary to delete file or folder
+    """Securely delete a file or folder using the secure-delete binary.
+
+    This function uses the secure-delete (srm) binary to securely remove files or folders
+    from the filesystem, ensuring the data cannot be recovered.
+
     Args:
-        logger: Logger object.
-        toml_config: Dictionary containing configuration data.
-        data: String containing full path to file or folder to be deleted.
+        logger (logging.Logger): Logger object for recording operations.
+        toml_config (dict): Configuration dictionary with backup settings.
+        data (str): Full path to the file or folder to be securely deleted.
+
+    Returns:
+        dict: Result containing status information:
+            {"is_working": bool, "msg": str}
+
+    Error Responses:
+        {"is_working": False, "msg": "data var is empty"}: If data parameter is empty
+        {"is_working": False, "msg": "data file <path> does not exist"}: If file/folder doesn't exist
+        {"is_working": False, "msg": "permission denied on <path>"}: If permission is denied
+        {"is_working": False, "msg": "returncode of cmd srm is non zero"}: If srm command fails
+        {"is_working": False, "msg": "cmd srm except subprocess.CalledProcessError occured"}: If subprocess error occurs
+
+    Success Response:
+        {"is_working": True, "msg": "deleted <path> successfully"}
     """
 
     # Path to secure-delete binary
