@@ -3,9 +3,6 @@ import logging
 import logging.handlers
 import os
 import toml
-import datetime
-import platform
-import shutil
 import sys
 from ddmail_backup_taker.validate_config import check_config
 from ddmail_backup_taker.backup import create_backup, send_to_backup_receiver, clear_backups
@@ -77,9 +74,7 @@ def main():
 
     # Send backup file to ddmail_backup_receiver.
     if toml_config["BACKUP_RECEIVER"]["USE"] == True:
-        url = toml_config["BACKUP_RECEIVER"]["URL"]
-        password = toml_config["BACKUP_RECEIVER"]["PASSWORD"]
-
+        # Send backup to ddmail_backup_receiver
         logger.debug("running send_to_backup_receiver")
         result_send_to_backup_receiver = send_to_backup_receiver(logger, toml_config, result_create_backup["backup_file"], result_create_backup["backup_filename"])
         if not result_send_to_backup_receiver["is_working"]:
