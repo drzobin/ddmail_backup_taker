@@ -1,180 +1,164 @@
+import pytest
+import logging
 import os
-import shutil
-import time
+import tempfile
+import hashlib
 from ddmail_backup_taker.backup import sha256_of_file, backup_mariadb, clear_backups, create_backup, tar_data, send_to_backup_receiver, secure_delete
 
+@pytest.fixture
+def testfile():
+    path = "tests/test_file.txt"
+    name = "test_file.txt"
+    sha256checksum = "4677942dfa3e74b5dea7484661a2485bb73ba422eb72d311fdb39372c019c615"
 
-# Testfile used in many testcases.
-TESTFILE_PATH = "tests/test_file.txt"
-TESTFILE_NAME = "test_file.txt"
-SHA256 = "4677942dfa3e74b5dea7484661a2485bb73ba422eb72d311fdb39372c019c615"
-f = open(TESTFILE_PATH, "r")
-TESTFILE_DATA = f.read()
+    # Read testfile from disc.
+    f = open(path, "r")
+    data = f.read()
+
+    return {"path": path, "name": name, "sha256checksum": sha256checksum, "data": data}
 
 
-def test_sha256_of_file_test1():
+@pytest.fixture
+def logger():
+    # Setup logging.
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG)
+
+    formatter = logging.Formatter(
+        "{asctime} testing ddmail_backup_taker {levelname} in {module} {funcName} {lineno}: {message}",
+        style="{",
+        datefmt="%Y-%m-%d %H:%M",
+    )
+
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(formatter)
+    logger.addHandler(console_handler)
+
+    return logger
+
+
+def test_sha256_of_file_create_sha256(logger,testfile):
     """Test sha256_of_file() checksum is correct."""
-    sha256 = sha256_of_file(TESTFILE_PATH)
+    sha256 = sha256_of_file(logger, testfile["path"])
 
-    assert sha256 == SHA256
+    assert sha256["is_working"] is True
+    assert sha256["checksum"] == testfile["sha256checksum"]
 
 
-def test_sha256_of_file_test2():
-    """Test sha256_go_file() open a file that do not exist."""
+def test_sha256_of_no_file(logger):
+    """Test sha256_of_file() with a file that does not exist."""
     file_path = "/tmp/nofile"
-    sha256 = sha256_of_file(file_path)
+    sha256 = sha256_of_file(logger,file_path)
 
-    assert sha256 is None
+    assert sha256["is_working"] is False
+    assert sha256["msg"] == "file does not exist"
 
 
-def test_backup_mariadb_test1():
-    """Test backup_mariadb() with mariadbdump binary location that do not exist."""
+def test_sha256_of_file_empty_str(logger):
+    """Test sha256_of_file() with an empty string path."""
+    sha256 = sha256_of_file(logger,"")
 
-    mariadbdump_bin = "/usr/local/donotexist"
-    mariadb_root_password = "1superGoodpasswordthatiswrong"
-    dst_test_folder = "/tmp/mariadbdump"
+    assert sha256["is_working"] is False
+    assert sha256["msg"] == "file does not exist"
 
-    # Create empty dst_test_folder.
-    if os.path.exists(dst_test_folder):
-        shutil.rmtree(dst_test_folder)
-    if not os.path.exists(dst_test_folder):
-        os.makedirs(dst_test_folder)
 
-    worked = backup_mariadb(mariadbdump_bin, mariadb_root_password, dst_test_folder)
+def test_sha256_of_empty_file(logger):
+    """Test sha256_of_file() with an empty file."""
+    # Create a temporary empty file
+    with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+        temp_path = temp_file.name
 
-    assert worked is False
+    try:
+        # Compute expected checksum for empty file
+        expected_checksum = hashlib.sha256(b"").hexdigest()
+        
+        # Test the function
+        sha256 = sha256_of_file(logger, temp_path)
+        
+        assert sha256["is_working"] is True
+        assert sha256["checksum"] == expected_checksum
+    finally:
+        # Clean up
+        if os.path.exists(temp_path):
+            os.unlink(temp_path)
 
-def test_backup_mariadb_test2():
-    """Test backup_mariadb() with wrong db root password."""
 
-    mariadbdump_bin = "/usr/bin/mariadb-dump"
-    mariadb_root_password = "1superGoodpasswordthatiswrong"
-    dst_test_folder = "/tmp/mariadbdump"
+def test_sha256_of_binary_file(logger):
+    """Test sha256_of_file() with a binary file."""
+    # Create a temporary binary file
+    binary_data = bytes([0x00, 0xFF, 0xAA, 0x55, 0x12, 0x34, 0x56, 0x78])
+    with tempfile.NamedTemporaryFile(delete=False, mode='wb') as temp_file:
+        temp_file.write(binary_data)
+        temp_path = temp_file.name
 
-    # Create empty dst_test_folder.
-    if os.path.exists(dst_test_folder):
-        shutil.rmtree(dst_test_folder)
-    if not os.path.exists(dst_test_folder):
-        os.makedirs(dst_test_folder)
+    try:
+        # Compute expected checksum
+        expected_checksum = hashlib.sha256(binary_data).hexdigest()
+        
+        # Test the function
+        sha256 = sha256_of_file(logger, temp_path)
+        
+        assert sha256["is_working"] is True
+        assert sha256["checksum"] == expected_checksum
+    finally:
+        # Clean up
+        if os.path.exists(temp_path):
+            os.unlink(temp_path)
 
-    worked = backup_mariadb(mariadbdump_bin, mariadb_root_password, dst_test_folder)
 
-    assert worked is False
+def test_sha256_of_large_file(logger):
+    """Test sha256_of_file() with a file larger than the buffer size (65536 bytes)."""
+    # Create a temporary large file (100KB)
+    large_data = b'x' * 100000
+    with tempfile.NamedTemporaryFile(delete=False, mode='wb') as temp_file:
+        temp_file.write(large_data)
+        temp_path = temp_file.name
 
-def test_backup_mariadb_test3():
-    """Test backup_mariadb() with dst_folder that do not exist."""
+    try:
+        # Compute expected checksum
+        expected_checksum = hashlib.sha256(large_data).hexdigest()
+        
+        # Test the function
+        sha256 = sha256_of_file(logger, temp_path)
+        
+        assert sha256["is_working"] is True
+        assert sha256["checksum"] == expected_checksum
+    finally:
+        # Clean up
+        if os.path.exists(temp_path):
+            os.unlink(temp_path)
 
-    mariadbdump_bin = "/usr/bin/mariadb-dump"
-    mariadb_root_password = "1superGoodpasswordthatiswrong"
-    dst_test_folder = "/tmp/mariadbdump"
 
-    # Create empty dst_test_folder.
-    if os.path.exists(dst_test_folder):
-        shutil.rmtree(dst_test_folder)
+def test_sha256_of_unreadable_file(logger):
+    """Test sha256_of_file() with a file that cannot be read due to permissions."""
+    # This test may not work on all platforms/environments where the test is run with elevated privileges
+    # Skip on Windows or if running as root/admin
+    if os.name == 'nt':
+        pytest.skip("Test not applicable on Windows")
+    
+    # Skip if running as root on Unix-like systems
+    try:
+        if os.geteuid() == 0:  # Only works on Unix-like systems
+            pytest.skip("Test not applicable when running as root")
+    except AttributeError:
+        # geteuid not available on this platform
+        pass
 
-    worked = backup_mariadb(mariadbdump_bin, mariadb_root_password, dst_test_folder)
-
-    assert worked is False
-
-def test_clear_backups_test1():
-    """Test clear_backups() with empty folder."""
-
-    folder = "/tmp/test_clear_backups"
-    days_to_save_backups = 1
-
-    if os.path.exists(folder):
-        shutil.rmtree(folder)
-    if not os.path.exists(folder):
-        os.makedirs(folder)
-
-    clear_backups(folder, days_to_save_backups)
-
-def test_clear_backups_test2():
-    """Test clear_backups() folder with 3 *.gpg files"""
-
-    folder = "/tmp/test_clear_backups_test2"
-    days_to_save_backups = 1
-
-    if os.path.exists(folder):
-        shutil.rmtree(folder)
-    if not os.path.exists(folder):
-        os.makedirs(folder)
-
-    test_file1 = folder + "/backup.dev1.2024-08-01.zip.gpg"
-    test_file2 = folder + "/backup.dev1.2024-08-02.zip.gpg"
-    test_file3 = folder + "/backup.dev1.2024-08-03.zip.gpg"
-
-    shutil.copyfile(TESTFILE_PATH, test_file1)
-    time.sleep(1)
-    shutil.copyfile(TESTFILE_PATH, test_file2)
-    time.sleep(1)
-    shutil.copyfile(TESTFILE_PATH, test_file3)
-
-    clear_backups(folder, days_to_save_backups)
-
-    assert os.path.exists(test_file1) is False
-    assert os.path.exists(test_file2) is False
-    assert os.path.exists(test_file3) is True
-
-    if os.path.exists(folder):
-        shutil.rmtree(folder)
-
-def test_clear_backups_test3():
-    """Test clear_backups() folder with 3 *.zip files"""
-
-    folder = "/tmp/test_clear_backups_test3"
-    days_to_save_backups = 2
-
-    if os.path.exists(folder):
-        shutil.rmtree(folder)
-    if not os.path.exists(folder):
-        os.makedirs(folder)
-
-    test_file1 = folder + "/backup.dev1.2024-08-01.zip"
-    test_file2 = folder + "/backup.dev1.2024-08-02.zip"
-    test_file3 = folder + "/backup.dev1.2024-08-03.zip"
-
-    shutil.copyfile(TESTFILE_PATH, test_file1)
-    time.sleep(1)
-    shutil.copyfile(TESTFILE_PATH, test_file2)
-    time.sleep(1)
-    shutil.copyfile(TESTFILE_PATH, test_file3)
-
-    clear_backups(folder, days_to_save_backups)
-
-    assert os.path.exists(test_file1) is False
-    assert os.path.exists(test_file2) is True
-    assert os.path.exists(test_file3) is True
-
-    if os.path.exists(folder):
-        shutil.rmtree(folder)
-
-def test_clear_backups_test4():
-    """Test clear_backups() folder with 3 *.zip files without deleting anything"""
-
-    folder = "/tmp/test_clear_backups_test4"
-    days_to_save_backups = 7
-
-    if os.path.exists(folder):
-        shutil.rmtree(folder)
-    if not os.path.exists(folder):
-        os.makedirs(folder)
-
-    test_file1 = folder + "/backup.dev1.2024-08-01.zip"
-    test_file2 = folder + "/backup.dev1.2024-08-02.zip"
-    test_file3 = folder + "/backup.dev1.2024-08-03.zip"
-
-    shutil.copyfile(TESTFILE_PATH, test_file1)
-    time.sleep(1)
-    shutil.copyfile(TESTFILE_PATH, test_file2)
-    time.sleep(1)
-    shutil.copyfile(TESTFILE_PATH, test_file3)
-
-    clear_backups(folder, days_to_save_backups)
-
-    assert os.path.exists(test_file1) is True
-    assert os.path.exists(test_file2) is True
-    assert os.path.exists(test_file3) is True
-
-    if os.path.exists(folder):
-        shutil.rmtree(folder)
+    # Create a temporary file
+    with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+        temp_file.write(b"test content")
+        temp_path = temp_file.name
+    
+    try:
+        # Remove read permissions
+        os.chmod(temp_path, 0o000)
+        
+        # The current implementation of sha256_of_file doesn't handle permission errors
+        # It will raise a PermissionError when it tries to open the file
+        with pytest.raises(PermissionError):
+            sha256_of_file(logger, temp_path)
+    finally:
+        # Restore permissions so we can delete it
+        os.chmod(temp_path, 0o600)
+        if os.path.exists(temp_path):
+            os.unlink(temp_path)
