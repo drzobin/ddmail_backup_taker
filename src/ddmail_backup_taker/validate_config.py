@@ -3,7 +3,38 @@ import os
 import re
 import gnupg
 
-def check_main_vars(logger:logging.Logger,toml_config:dict) -> dict:
+def check_main_vars(logger:logging.Logger, toml_config:dict) -> dict:
+    """Validate the main configuration variables.
+
+    This function checks that all the main configuration settings are valid,
+    including directories, file paths, and permissions.
+
+    Args:
+        logger (logging.Logger): Logger object for recording operations.
+        toml_config (dict): Configuration dictionary with backup settings.
+
+    Returns:
+        dict: Result containing validation status:
+            {"is_working": bool, "msg": str}
+
+    Error Responses:
+        {"is_working": False, "msg": "config SAVE_BACKUPS_TO is None"}: If backup directory is not specified
+        {"is_working": False, "msg": "config SAVE_BACKUPS_TO do not exist"}: If backup directory doesn't exist and can't be created
+        {"is_working": False, "msg": "config SAVE_BACKUPS_TO is not writable"}: If backup directory isn't writable
+        {"is_working": False, "msg": "config TMP_FOLDER is None"}: If temporary folder is not specified
+        {"is_working": False, "msg": "config TMP_FOLDER do not exist"}: If temporary folder doesn't exist and can't be created
+        {"is_working": False, "msg": "config TMP_FOLDER is not writable"}: If temporary folder isn't writable
+        {"is_working": False, "msg": "config TAR_BIN is None"}: If tar binary path is not specified
+        {"is_working": False, "msg": "config TAR_BIN do not exist"}: If tar binary doesn't exist
+        {"is_working": False, "msg": "config TAR_BIN is not executable"}: If tar binary isn't executable
+        {"is_working": False, "msg": "config BACKUPS_TO_SAVE_LOCAL must be a positive integer"}: If backup retention setting is invalid
+        {"is_working": False, "msg": "config SRM_BIN is None"}: If secure delete binary path is not specified
+        {"is_working": False, "msg": "config SRM_BIN is not a file"}: If secure delete binary doesn't exist
+        {"is_working": False, "msg": "config SRM_BIN is not executable"}: If secure delete binary isn't executable
+
+    Success Response:
+        {"is_working": True, "msg": "Configurations file main variable is valid."}
+    """
     # Check if SAVE_BACKUPS_TO is None.
     if not toml_config["SAVE_BACKUPS_TO"]:
         msg = "config SAVE_BACKUPS_TO is None"
@@ -91,6 +122,27 @@ def check_main_vars(logger:logging.Logger,toml_config:dict) -> dict:
     return {"is_working": True, "msg": "Configurations file main variable is valid."}
 
 def check_data_vars(logger:logging.Logger, toml_config:dict) -> dict:
+    """Validate the data section configuration variables.
+
+    This function checks that all the data backup configuration settings are valid,
+    including checking that specified paths exist and are readable.
+
+    Args:
+        logger (logging.Logger): Logger object for recording operations.
+        toml_config (dict): Configuration dictionary with backup settings.
+
+    Returns:
+        dict: Result containing validation status:
+            {"is_working": bool, "msg": str}
+
+    Error Responses:
+        {"is_working": False, "msg": "config DATA.DATA_TO_BACKUP must be a string"}: If data paths aren't specified correctly
+        {"is_working": False, "msg": "config DATA.DATA_TO_BACKUP contains non-existent path: <path>"}: If a data path doesn't exist
+        {"is_working": False, "msg": "config DATA.DATA_TO_BACKUP contains unreadable path: <path>"}: If a data path isn't readable
+
+    Success Response:
+        {"is_working": True, "msg": "Configurations file DATA section variables is valid."}
+    """
     # Check if DATA.USE is True.
     if toml_config["DATA"]["USE"]:
         # Check if DATA.DATA_TO_BACKUP is a string
@@ -116,6 +168,27 @@ def check_data_vars(logger:logging.Logger, toml_config:dict) -> dict:
     return {"is_working": True, "msg": "Configurations file DATA section variables is valid."}
 
 def check_mariadb_vars(logger:logging.Logger, toml_config:dict) -> dict:
+    """Validate the MariaDB section configuration variables.
+
+    This function checks that all the MariaDB backup configuration settings are valid,
+    including checking that the mariadbdump binary exists and is executable.
+
+    Args:
+        logger (logging.Logger): Logger object for recording operations.
+        toml_config (dict): Configuration dictionary with backup settings.
+
+    Returns:
+        dict: Result containing validation status:
+            {"is_working": bool, "msg": str}
+
+    Error Responses:
+        {"is_working": False, "msg": "config MARIADB.MARIADBDUMP_BIN must be a valid path"}: If mariadbdump binary path is invalid
+        {"is_working": False, "msg": "config MARIADB.MARIADBDUMP_BIN must be executable"}: If mariadbdump binary isn't executable
+        {"is_working": False, "msg": "config MARIADB.ROOT_PASSWORD must be a string"}: If root password isn't specified
+
+    Success Response:
+        {"is_working": True, "msg": "Configurations file MARIADB section variables is valid."}
+    """
     # Check if MARIADB.USE is True
     if toml_config["MARIADB"]["USE"]:
         # Check if MARIADBDUMP_BIN is not None
@@ -145,6 +218,30 @@ def check_mariadb_vars(logger:logging.Logger, toml_config:dict) -> dict:
     return {"is_working": True, "msg": "Configurations file MARIADB section variables is valid."}
 
 def check_gpg_vars(logger:logging.Logger,toml_config:dict) -> dict:
+    """Validate the GPG encryption section configuration variables.
+
+    This function checks that all the GPG encryption configuration settings are valid,
+    including checking that the GPG binary exists and the specified key is in the keystore.
+
+    Args:
+        logger (logging.Logger): Logger object for recording operations.
+        toml_config (dict): Configuration dictionary with backup settings.
+
+    Returns:
+        dict: Result containing validation status:
+            {"is_working": bool, "msg": str}
+
+    Error Responses:
+        {"is_working": False, "msg": "config GPG_ENCRYPTION.GPG_BIN must be a string"}: If GPG binary path isn't a string
+        {"is_working": False, "msg": "config GPG_ENCRYPTION.GPG_BIN must be a valid path"}: If GPG binary doesn't exist
+        {"is_working": False, "msg": "config GPG_ENCRYPTION.GPG_BIN must be executable"}: If GPG binary isn't executable
+        {"is_working": False, "msg": "config GPG_ENCRYPTION.PUBKEY_FINGERPRINT must be a string"}: If fingerprint isn't a string
+        {"is_working": False, "msg": "config GPG_ENCRYPTION.PUBKEY_FINGERPRINT must be a valid fingerprint"}: If fingerprint format is invalid
+        {"is_working": False, "msg": "config GPG_ENCRYPTION.PUBKEY_FINGERPRINT <fingerprint> key is not in keystore"}: If key isn't in keystore
+
+    Success Response:
+        {"is_working": True, "msg": "Configurations file GPG section variables is valid."}
+    """
 
     # Check if GPG_ENCRYPTION.USE is True.
     if toml_config["GPG_ENCRYPTION"]["USE"]:
@@ -190,6 +287,27 @@ def check_gpg_vars(logger:logging.Logger,toml_config:dict) -> dict:
     return {"is_working": True, "msg": "Configurations file GPG section variables is valid."}
 
 def check_backup_receiver_vars(logger:logging.Logger,toml_config:dict) -> dict:
+    """Validate the backup receiver section configuration variables.
+
+    This function checks that all the backup receiver configuration settings are valid,
+    including checking that the URL and password are properly specified.
+
+    Args:
+        logger (logging.Logger): Logger object for recording operations.
+        toml_config (dict): Configuration dictionary with backup settings.
+
+    Returns:
+        dict: Result containing validation status:
+            {"is_working": bool, "msg": str}
+
+    Error Responses:
+        {"is_working": False, "msg": "config BACKUP_RECEIVER.URL must be a string"}: If URL isn't a string
+        {"is_working": False, "msg": "config BACKUP_RECEIVER.URL must be a valid URL"}: If URL format is invalid
+        {"is_working": False, "msg": "config BACKUP_RECEIVER.PASSWORD must be a string"}: If password isn't a string
+
+    Success Response:
+        {"is_working": True, "msg": "Configurations file BACKUP_RECEIVER section variables is valid."}
+    """
     # Check if BACKUP_RECEIVER.USE is True
     if toml_config["BACKUP_RECEIVER"]["USE"]:
         # Check if BACKUP_RECEIVER.URL is a string.
@@ -213,7 +331,26 @@ def check_backup_receiver_vars(logger:logging.Logger,toml_config:dict) -> dict:
     return {"is_working": True, "msg": "Configurations file BACKUP_RECEIVER section variables is valid."}
 
 def check_config(logger:logging.Logger, toml_config:dict) -> dict:
-    """Check if the configuration is valid."""
+    """Validate the complete configuration file.
+
+    This function orchestrates the validation of all configuration sections,
+    checking that all settings are valid and consistent.
+
+    Args:
+        logger (logging.Logger): Logger object for recording operations.
+        toml_config (dict): Configuration dictionary with backup settings.
+
+    Returns:
+        dict: Result containing validation status:
+            {"is_working": bool, "msg": str}
+
+    Error Responses:
+        {"is_working": False, "msg": "No configuration provided."}: If configuration is empty
+        {"is_working": False, "msg": <error message>}: If any section validation fails
+
+    Success Response:
+        {"is_working": True, "msg": "Configuration is valid"}
+    """
     # Check if toml_config is None.
     if not toml_config:
         msg = "No configuration provided."
