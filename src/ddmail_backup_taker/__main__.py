@@ -31,17 +31,17 @@ def main():
         datefmt="%Y-%m-%d %H:%M",
         )
 
-    if toml_config["LOGGING"]["LOG_TO_CONSOLE"] == True:
+    if toml_config["LOGGING"]["LOG_TO_CONSOLE"]:
         console_handler = logging.StreamHandler()
         console_handler.setFormatter(formatter)
         logger.addHandler(console_handler)
 
-    if toml_config["LOGGING"]["LOG_TO_FILE"] == True:
+    if toml_config["LOGGING"]["LOG_TO_FILE"]:
         file_handler = logging.FileHandler(toml_config["LOGGING"]["LOGFILE"], mode="a", encoding="utf-8")
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
 
-    if toml_config["LOGGING"]["LOG_TO_SYSLOG"] == True:
+    if toml_config["LOGGING"]["LOG_TO_SYSLOG"]:
         syslog_handler = logging.handlers.SysLogHandler(address = toml_config["LOGGING"]["SYSLOG_SERVER"])
         syslog_handler.setFormatter(formatter)
         logger.addHandler(syslog_handler)
@@ -73,7 +73,7 @@ def main():
         sys.exit(1)
 
     # Send backup file to ddmail_backup_receiver.
-    if toml_config["BACKUP_RECEIVER"]["USE"] == True:
+    if toml_config["BACKUP_RECEIVER"]["USE"]:
         # Send backup to ddmail_backup_receiver
         logger.debug("running send_to_backup_receiver")
         result_send_to_backup_receiver = send_to_backup_receiver(logger, toml_config, result_create_backup["backup_file"], result_create_backup["backup_filename"])
