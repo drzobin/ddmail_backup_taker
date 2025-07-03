@@ -5,7 +5,6 @@ import datetime
 import glob
 import hashlib
 import requests
-import gnupg
 
 def create_backup(logger:logging.Logger, toml_config:dict) -> dict:
     """Create a complete backup according to the provided configuration.
@@ -53,7 +52,7 @@ def create_backup(logger:logging.Logger, toml_config:dict) -> dict:
     if not os.path.exists(tmp_folder_date):
         os.makedirs(tmp_folder_date)
 
-    if toml_config["MARIADB"]["USE"] == True:
+    if toml_config["MARIADB"]["USE"]:
         # Mariadb-dump binary location.
         mariadbdump_bin = toml_config["MARIADB"]["MARIADBDUMP_BIN"]
 
@@ -69,12 +68,12 @@ def create_backup(logger:logging.Logger, toml_config:dict) -> dict:
 
         data_to_backup.append(result["db_dump_file"])
 
-    if toml_config["DATA"]["USE"] == True:
+    if toml_config["DATA"]["USE"]:
         # The folder/file to take backups on.
         data_to_backup.extend(str.split(toml_config["DATA"]["DATA_TO_BACKUP"]))
 
     result_tar_data = {}
-    if toml_config["DATA"]["USE"] == True or toml_config["MARIADB"]["USE"] == True:
+    if toml_config["DATA"]["USE"] or toml_config["MARIADB"]["USE"]:
         logger.debug("running tar_data")
         result_tar_data = tar_data(logger, toml_config, data_to_backup)
         if not result_tar_data["is_working"]:
@@ -82,11 +81,15 @@ def create_backup(logger:logging.Logger, toml_config:dict) -> dict:
             logger.error(msg)
             return {"is_working": False, "msg": msg}
 
-
     # Remove temp folder
     result_secure_delete = secure_delete(logger,toml_config,tmp_folder_date)
     if not result_secure_delete["is_working"]:
         msg = "Failed to secure delete temp folder"
+        logger.error(msg)
+        return {"is_working": False, "msg": msg}
+
+    if not toml_config["DATA"]["USE"] and not toml_config["MARIADB"]["USE"]:
+        msg = "No backup data to backup"
         logger.error(msg)
         return {"is_working": False, "msg": msg}
 
@@ -141,7 +144,7 @@ def tar_data(logger:logging.Logger, toml_config:dict, data_to_backup:list[str])-
     backup_file = os.path.join(save_backups_to, backup_filename)
 
     # Should the tar archive be encrypted.
-    if toml_config["GPG_ENCRYPTION"]["USE"] == True:
+    if toml_config["GPG_ENCRYPTION"]["USE"]:
         gpg_bin = toml_config["GPG_ENCRYPTION"]["GPG_BIN"]
         gpg_pubkey_fingerprint = toml_config["GPG_ENCRYPTION"]["PUBKEY_FINGERPRINT"]
         backup_file = backup_file + ".gpg"
@@ -277,7 +280,7 @@ def backup_mariadb(logger: logging.Logger, mariadbdump_bin: str, mariadb_root_pa
         return {"is_working": False, "msg": msg}
 
     # Check that sql dump file has been created.
-    if not os.path.isfile(db_dump_file) == True:
+    if not os.path.isfile(db_dump_file):
         msg = "mariadb database dump file " + db_dump_file + " does not exist"
         logger.error(msg)
         return {"is_working": False, "msg": msg}
