@@ -27,6 +27,8 @@ dev = [
     "flake8",
     "hatchling",
     "twine",
+    "pyright",
+    "ruff",
 ]
 test = [
     "toml",
