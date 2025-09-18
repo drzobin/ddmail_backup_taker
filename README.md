@@ -45,4 +45,4 @@ Step 5: Install package<br>
 `pytest --cov=ddmail_backup_taker tests/ --config=[config file path]`
 
 ## Coding
-Follow PEP8 and PEP257. Use Flake8 with flake8-docstrings for linting. Strive for 100% test coverage.
+Follow PEP8 and PEP257. Use ruff for linting. Strive for 100% test coverage.
