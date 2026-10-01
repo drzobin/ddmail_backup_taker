@@ -34,6 +34,7 @@ GPG_BIN = '/usr/bin/gpg'
 [BACKUP_RECEIVER]
 # Set to true if we should send the backup to a remote server using ddmail_backup_receiver else false.
 USE = true
+TIMEOUT = 600
 URL = 'https://change_me:change_me/receive_backup'
 PASSWORD = 'change_me'
 
