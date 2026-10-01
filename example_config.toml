@@ -37,6 +37,8 @@ USE = true
 TIMEOUT = 600
 URL = 'https://change_me:change_me/receive_backup'
 PASSWORD = 'change_me'
+# Verify TLS/SSL cert, can be True, False or full path to ca bundle.
+TLS_VERIFY = true
 
 [LOGGING]
 LOGLEVEL = 'INFO'
