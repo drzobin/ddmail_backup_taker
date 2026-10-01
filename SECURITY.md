@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-Supported release is most current release, can be found under "Releases" and at https://pypi.org/project/ddmail-webapp/
+Supported release is most current release, can be found under "Releases" and at https://pypi.org/project/ddmail-backup-taker/
 
 ## Reporting a Vulnerability
 
