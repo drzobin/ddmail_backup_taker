@@ -460,10 +460,13 @@ def send_to_backup_receiver(logger:logging.Logger,toml_config:dict, backup_path:
 
     # Timeout value when sending backup to backup_receiver server.
     timeout = toml_config["BACKUP_RECEIVER"]["TIMEOUT"]
+    
+    # TLS verify
+    verify = toml_config["BACKUP_RECEIVER"]["TLS_VERIFY"]
 
     # Send backup to backup_receiver
     try:
-        r = requests.post(url, files=files, data=data, timeout=timeout)
+        r = requests.post(url, verify=verify, files=files, data=data, timeout=timeout)
 
         # Log result.
         if str(r.status_code) == "200" and r.text == "done":
