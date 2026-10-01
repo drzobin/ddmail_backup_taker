@@ -185,7 +185,10 @@ def tar_data(logger:logging.Logger, toml_config:dict, data_to_backup:list[str])-
                 return {"is_working": False, "msg": msg}
 
         except Exception as e:
-            msg = f"Error during backup process: {str(e)}"
+            if toml_config["LOGGING"]["SHOW_EXCEPT_MSG"] == True:
+                msg = f"Error during backup process: {str(e)}"
+            else:
+                msg = "Error during backup process"
             logger.error(msg)
             return {"is_working": False, "msg": msg}
     else:
@@ -205,11 +208,17 @@ def tar_data(logger:logging.Logger, toml_config:dict, data_to_backup:list[str])-
                 return {"is_working": False, "msg": msg}
 
         except subprocess.CalledProcessError as e:
-            msg = f"tar command failed with return code {e.returncode}: {e.stderr.decode('utf-8')}"
+            if toml_config["LOGGING"]["SHOW_EXCEPT_MSG"] == True:
+                msg = f"tar command failed with return code {e.returncode}: {e.stderr.decode('utf-8')}"
+            else:
+                msg = "tar command failed"
             logger.error(msg)
             return {"is_working": False, "msg": msg}
         except Exception as e:
-            msg = f"Error during backup process: {str(e)}"
+            if toml_config["LOGGING"]["SHOW_EXCEPT_MSG"] == True:
+                msg = f"Error during backup process: {str(e)}"
+            else:
+                msg = "Error during backup process"
             logger.error(msg)
             return {"is_working": False, "msg": msg}
 
@@ -274,8 +283,9 @@ def backup_mariadb(logger: logging.Logger, mariadbdump_bin: str, mariadb_root_pa
             msg = "returncode of cmd mariadbdump is none zero"
             logger.error(msg)
             return {"is_working": False, "msg": msg}
-    except subprocess.CalledProcessError:
-        msg = "returncode of cmd mariadbdump is none zero"
+    except subprocess.CalledProcessError as e:
+        if toml_config["LOGGING"]["SHOW_EXCEPT_MSG"] == True:
+            msg = f"returncode of cmd mariadbdump is none zero {e}"
         logger.error(msg)
         return {"is_working": False, "msg": msg}
 
@@ -466,8 +476,11 @@ def send_to_backup_receiver(logger:logging.Logger,toml_config:dict, backup_path:
                   " and message: " + r.text
             logger.error(msg)
             return {"is_working": False, "msg": msg}
-    except requests.ConnectionError:
-        msg = "failed to sent backup to backup_receiver request exception ConnectionError"
+    except requests.ConnectionError as e:
+        if toml_config["LOGGING"]["SHOW_EXCEPT_MSG"] == True:
+            msg = f"failed to sent backup to backup_receiver request exception ConnectionError {e}"
+        else:
+            msg = "failed to sent backup to backup_receiver request exception ConnectionError"
         logger.error(msg)
         return {"is_working": False, "msg": msg}
 
@@ -530,8 +543,11 @@ def secure_delete(logger: logging.Logger, toml_config: dict,data: str) -> dict:
             msg = "returncode of cmd srm is non zero"
             logger.error(msg)
             return {"is_working": False, "msg": msg}
-    except subprocess.CalledProcessError:
-        msg = "cmd srm except subprocess.CalledProcessError occured"
+    except subprocess.CalledProcessError as e:
+        if toml_config["LOGGING"]["SHOW_EXCEPT_MSG"] == True:
+            msg = f"cmd srm except subprocess.CalledProcessError {e}"
+        else:
+            msg = "cmd srm except subprocess.CalledProcessError"
         logger.error(msg)
         return {"is_working": False, "msg": msg}
 
